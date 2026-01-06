@@ -28,8 +28,12 @@ def create_app(config_name='default'):
             try:
                 locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')
             except locale.Error:
-                locale.setlocale(locale.LC_ALL, '')
-                app.logger.warning('Não foi possível configurar locale brasileiro.')
+            except locale.Error:
+                try:
+                    locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+                except locale.Error:
+                    app.logger.warning('Não foi possível configurar locale brasileiro. Usando padrão do sistema.')
+                    pass
     
     # Registra os filtros de template para formatação brasileira
     from app.utils.template_filters import registrar_filtros
