@@ -149,14 +149,17 @@ def seed_vegan_data():
         p = Prato(
             nome=nome,
             descricao=f"Delicioso prato vegano {nome}, feito com ingredientes selecionados.",
-            modo_preparo="Receita secreta do chef robô.",
+            # modo_preparo removed
             tempo_preparo=random.randint(15, 60),
             rendimento=1,
-            custo_total=custo,
-            categoria=categ
+            unidade_rendimento="porção", # Required field
+            porcoes_rendimento=1, # Required field
+            # custo_total removed (it's a property based on ingredients)
+            categoria=categ,
+            preco_venda=venda # Explicitly setting selling price
         )
         db.session.add(p)
-        db.session.commit() # Commit para ter ID
+        db.session.commit() # Commit to get ID
 
         # Associar alguns ingredientes aleatórios
         num_insumos = random.randint(2, 5)
@@ -166,7 +169,7 @@ def seed_vegan_data():
                 prato_id=p.id,
                 produto_id=ing.id,
                 quantidade=random.uniform(0.1, 0.5), # Kgs
-                custo_calculado=ing.preco_unitario * 0.1 # Simplificação
+                # custo_calculado removed (not in model)
             )
             db.session.add(pi)
         
@@ -174,11 +177,10 @@ def seed_vegan_data():
         item_cardapio = CardapioItem(
             secao_id=objs_secoes[secao_nome].id,
             prato_id=p.id,
-            nome=p.nome,
-            descricao=p.descricao,
+            # nome, descricao removed (they belong to Prato)
             preco_venda=venda,
-            preco_custo=custo,
-            ativo=True
+            # preco_custo removed (not in model)
+            disponivel=True # Replaces ativo
         )
         db.session.add(item_cardapio)
         pratos_objs.append((p, item_cardapio))
@@ -211,9 +213,10 @@ def seed_vegan_data():
                 valor_unitario=item_cardapio.preco_venda,
                 valor_total=valor_venda,
                 periodo_dia=random.choice(['Almoço', 'Jantar']),
-                dia_semana=data_venda.strftime('%A'),
+                dia_semana=data_venda.weekday(), # Integer 0-6
                 mes=data_venda.month,
-                ano=data_venda.year
+                semana_mes=(data_venda.day - 1) // 7 + 1
+                # ano removed (not in model)
             )
             vendas_buffer.append(venda)
             # Commit em lotes para não sobrecarregar
