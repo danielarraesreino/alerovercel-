@@ -15,5 +15,9 @@ with app.app_context():
     try:
         upgrade()
         print("Database migration successful!")
+        # Debug: List tables to confirm migration worked
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        print(f"Tables in DB: {inspector.get_table_names()}")
     except Exception as e:
         print(f"Migration failed (might be already up to date or connection issue): {e}")
