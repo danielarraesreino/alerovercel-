@@ -65,7 +65,7 @@ def test_produto_create(session):
     assert produto.id is not None
     assert produto.nome == "Produto de Teste"
     assert produto.descricao == "Produto criado para teste"
-    assert produto.unidade_medida == "kg"
+    assert produto.unidade == "kg"
     assert float(produto.preco_unitario) == 10.50
     assert produto.estoque_atual == 15.0
     
