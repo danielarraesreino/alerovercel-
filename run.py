@@ -65,3 +65,17 @@ def seed_vegan_route():
         }
     except Exception as e:
         return {"status": "error", "error": str(e)}
+
+@app.route('/reset-db', strict_slashes=False)
+def reset_db_route():
+    try:
+        # Nuclear option: Recreate schema
+        db.drop_all()
+        db.create_all()
+        return {
+            "status": "success",
+            "message": "Database reset successfully. Schema is now clean.",
+            "next_step": "Go to /seed-vegan to populate data."
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
