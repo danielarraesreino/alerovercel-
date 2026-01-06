@@ -31,7 +31,7 @@ with app.app_context():
     except Exception as e:
         print(f"Database initialization failed: {e}")
 
-@app.route('/debug-db')
+@app.route('/debug-db', strict_slashes=False)
 def debug_db():
     try:
         from sqlalchemy import inspect, text
@@ -53,7 +53,7 @@ def debug_db():
     except Exception as e:
         return {"error": str(e)}
 
-@app.route('/seed-vegan')
+@app.route('/seed-vegan', strict_slashes=False)
 def seed_vegan_route():
     try:
         from app.scripts.seed_vegan import seed_vegan_data
