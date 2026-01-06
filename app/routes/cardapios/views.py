@@ -11,51 +11,42 @@ import io
 @bp.route('/index')
 def index():
     """Lista todos os cardápios"""
-    try:
-        page = request.args.get('page', 1, type=int)
-        
-        # Filtros opcionais
-        tipo = request.args.get('tipo')
-        temporada = request.args.get('temporada')
-        ativos = request.args.get('ativos', default=True, type=lambda v: v.lower() == 'true')
-        
-        # Construir query base
-        query = Cardapio.query
-        
-        # Aplicar filtros
-        if tipo:
-            query = query.filter_by(tipo=tipo)
-        if temporada:
-            query = query.filter_by(temporada=temporada)
-        if ativos is not None:
-            # Fix: Se ativos for False (que pode ser resultado de 'Todos' ou 'Inativo'),
-            # precisamos ajustar a lógica. 
-            # Mas vamos manter simples por enquanto e apenas capturar erros.
-            query = query.filter_by(ativo=ativos)
-        
-        # Ordenar e paginar
-        cardapios = query.order_by(Cardapio.data_inicio.desc()).paginate(
-            page=page, per_page=20, error_out=False)
-        
-        # Obter lista de tipos e temporadas para filtros
-        tipos = db.session.query(Cardapio.tipo).distinct().all()
-        tipos = [t[0] for t in tipos if t[0]]
-        
-        temporadas = db.session.query(Cardapio.temporada).distinct().all()
-        temporadas = [t[0] for t in temporadas if t[0]]
-        
-        return render_template('cardapios/index.html', 
-                            cardapios=cardapios,
-                            tipos=tipos,
-                            temporadas=temporadas)
-    except Exception as e:
-        import traceback
-        return jsonify({
-            "status": "error",
-            "message": "Erro ao listar cardápios",
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }), 500
+    page = request.args.get('page', 1, type=int)
+    
+    # Filtros opcionais
+    tipo = request.args.get('tipo')
+    temporada = request.args.get('temporada')
+    ativos = request.args.get('ativos', default=True, type=lambda v: v.lower() == 'true')
+    
+    # Construir query base
+    query = Cardapio.query
+    
+    # Aplicar filtros
+    if tipo:
+        query = query.filter_by(tipo=tipo)
+    if temporada:
+        query = query.filter_by(temporada=temporada)
+    if ativos is not None:
+        # Fix: Se ativos for False (que pode ser resultado de 'Todos' ou 'Inativo'),
+        # precisamos ajustar a lógica. 
+        # Mas vamos manter simples por enquanto e apenas capturar erros.
+        query = query.filter_by(ativo=ativos)
+    
+    # Ordenar e paginar
+    cardapios = query.order_by(Cardapio.data_inicio.desc()).paginate(
+        page=page, per_page=20, error_out=False)
+    
+    # Obter lista de tipos e temporadas para filtros
+    tipos = db.session.query(Cardapio.tipo).distinct().all()
+    tipos = [t[0] for t in tipos if t[0]]
+    
+    temporadas = db.session.query(Cardapio.temporada).distinct().all()
+    temporadas = [t[0] for t in temporadas if t[0]]
+    
+    return render_template('cardapios/index.html', 
+                          cardapios=cardapios,
+                          tipos=tipos,
+                          temporadas=temporadas)
 
 @bp.route('/criar', methods=['GET', 'POST'])
 def criar():
