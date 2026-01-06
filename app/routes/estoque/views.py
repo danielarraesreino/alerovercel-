@@ -50,48 +50,39 @@ def index():
 @bp.route('/entrada', methods=['GET', 'POST'])
 def entrada():
     """Registra entrada manual de estoque"""
-    try:
-        if request.method == 'POST':
-            produto_id = request.form.get('produto_id', type=int)
-            quantidade = request.form.get('quantidade', type=float)
-            valor_unitario = request.form.get('valor_unitario', type=float)
-            referencia = request.form.get('referencia')
-            observacao = request.form.get('observacao')
-            
-            if not produto_id or not quantidade or quantidade <= 0:
-                flash('Produto e quantidade vu00e1lida su00e3o obrigatu00f3rios!', 'danger')
-                produtos = Produto.query.order_by(Produto.nome).all()
-                return render_template('estoque/entrada.html', produtos=produtos)
-            
-            # Registrar movimento de entrada
-            try:
-                movimento = EstoqueMovimentacao.registrar_entrada(
-                    produto_id=produto_id,
-                    quantidade=quantidade,
-                    valor_unitario=valor_unitario,
-                    referencia=referencia or 'Entrada Manual',
-                    observacao=observacao
-                )
-                
-                produto = Produto.query.get(produto_id)
-                flash(f'Entrada registrada com sucesso! Novo estoque: {produto.estoque_atual} {produto.unidade_medida}', 'success')
-                return redirect(url_for('estoque.index'))
-                
-            except ValueError as e:
-                flash(f'Erro ao registrar entrada: {str(e)}', 'danger')
-                produtos = Produto.query.order_by(Produto.nome).all()
-                return render_template('estoque/entrada.html', produtos=produtos)
+    if request.method == 'POST':
+        produto_id = request.form.get('produto_id', type=int)
+        quantidade = request.form.get('quantidade', type=float)
+        valor_unitario = request.form.get('valor_unitario', type=float)
+        referencia = request.form.get('referencia')
+        observacao = request.form.get('observacao')
         
-        produtos = Produto.query.order_by(Produto.nome).all()
-        return render_template('estoque/entrada.html', produtos=produtos)
-    except Exception as e:
-        import traceback
-        return jsonify({
-            "status": "error",
-            "message": "Erro na página de entrada de estoque",
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }), 500
+        if not produto_id or not quantidade or quantidade <= 0:
+            flash('Produto e quantidade vu00e1lida su00e3o obrigatu00f3rios!', 'danger')
+            produtos = Produto.query.order_by(Produto.nome).all()
+            return render_template('estoque/entrada.html', produtos=produtos)
+        
+        # Registrar movimento de entrada
+        try:
+            movimento = EstoqueMovimentacao.registrar_entrada(
+                produto_id=produto_id,
+                quantidade=quantidade,
+                valor_unitario=valor_unitario,
+                referencia=referencia or 'Entrada Manual',
+                observacao=observacao
+            )
+            
+            produto = Produto.query.get(produto_id)
+            flash(f'Entrada registrada com sucesso! Novo estoque: {produto.estoque_atual} {produto.unidade_medida}', 'success')
+            return redirect(url_for('estoque.index'))
+            
+        except ValueError as e:
+            flash(f'Erro ao registrar entrada: {str(e)}', 'danger')
+            produtos = Produto.query.order_by(Produto.nome).all()
+            return render_template('estoque/entrada.html', produtos=produtos)
+    
+    produtos = Produto.query.order_by(Produto.nome).all()
+    return render_template('estoque/entrada.html', produtos=produtos)
 
 @bp.route('/saida', methods=['GET', 'POST'])
 def saida():
@@ -131,26 +122,17 @@ def saida():
 @bp.route('/detalhe_produto/<int:id>')
 def detalhe_produto(id):
     """Mostra detalhes do estoque de um produto"""
-    try:
-        produto = Produto.query.get_or_404(id)
-        
-        # Buscar movimentau00e7u00f5es deste produto
-        page = request.args.get('page', 1, type=int)
-        movimentacoes = EstoqueMovimentacao.query.filter_by(produto_id=id).order_by(
-            EstoqueMovimentacao.data_movimentacao.desc()
-        ).paginate(page=page, per_page=10, error_out=False)
-        
-        return render_template('estoque/detalhe_produto.html', 
-                            produto=produto, 
-                            movimentacoes=movimentacoes)
-    except Exception as e:
-        import traceback
-        return jsonify({
-            "status": "error",
-            "message": "Erro ao exibir detalhes do produto",
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }), 500
+    produto = Produto.query.get_or_404(id)
+    
+    # Buscar movimentau00e7u00f5es deste produto
+    page = request.args.get('page', 1, type=int)
+    movimentacoes = EstoqueMovimentacao.query.filter_by(produto_id=id).order_by(
+        EstoqueMovimentacao.data_movimentacao.desc()
+    ).paginate(page=page, per_page=10, error_out=False)
+    
+    return render_template('estoque/detalhe_produto.html', 
+                          produto=produto, 
+                          movimentacoes=movimentacoes)
 
 @bp.route('/relatorio')
 def relatorio():
