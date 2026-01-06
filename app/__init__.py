@@ -28,7 +28,7 @@ def create_app(config_name='default'):
             try:
                 locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')
             except locale.Error:
-            except locale.Error:
+
                 try:
                     locale.setlocale(locale.LC_ALL, 'C.UTF-8')
                 except locale.Error:
