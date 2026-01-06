@@ -52,7 +52,7 @@ def test_produto_create(session):
     produto = Produto(
         nome="Produto de Teste",
         descricao="Produto criado para teste",
-        unidade_medida="kg",
+        unidade="kg",
         preco_unitario=10.50,
         estoque_minimo=5.0,
         estoque_atual=15.0,
