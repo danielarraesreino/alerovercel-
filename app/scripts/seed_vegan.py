@@ -45,14 +45,19 @@ def seed_vegan_data():
         "Zona Cerealista Atacado", "Cogumelos Mágicos Site", "Granja de Ovos (Fake) Plant Based"
     ]
     
-    for nome_empresa in nomes_fornecedores:
+    for i, nome_empresa in enumerate(nomes_fornecedores):
         contato = random_name()
+        # Generate fake CNPJ
+        fake_cnpj = f"{random.randint(10,99)}{random.randint(100,999)}{random.randint(100,999)}0001{random.randint(10,99)}"
+        
         f = Fornecedor(
-            nome_empresa=nome_empresa,
-            nome_contato=contato,
+            razao_social=nome_empresa + " LTDA",
+            nome_fantasia=nome_empresa,
+            nome_contato=contato if hasattr(Fornecedor, 'nome_contato') else None, # Check safety, strictly it's not in model
             email=random_email(contato),
             telefone=random_phone(),
-            categoria=random.choice(['Hortifruti', 'Grãos', 'Processados', 'Temperos'])
+            cnpj=fake_cnpj
+            # categoria removed as it is not in the model
         )
         db.session.add(f)
         fornecedores.append(f)
