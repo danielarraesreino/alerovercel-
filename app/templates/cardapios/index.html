@@ -122,7 +122,7 @@
                 </div>
                 <p class="card-text">
                     <small class="text-muted">
-                        Vigência: {{ cardapio.data_inicio.strftime('%d/%m/%Y') }} 
+                        Vigência: {{ cardapio.data_inicio.strftime('%d/%m/%Y') if cardapio.data_inicio else 'Data não definida' }} 
                         {% if cardapio.data_fim %}
                         a {{ cardapio.data_fim.strftime('%d/%m/%Y') }}
                         {% else %}

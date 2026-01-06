@@ -19,8 +19,8 @@ with app.app_context():
         print("db.create_all() executed successfully.")
         
         try:
-            upgrade()
-            print("Database migration successful!")
+            # upgrade()
+            print("Database migration skipped (using create_all).")
         except Exception as e:
             print(f"Migration step failed (might conflict with create_all, but tables should be there): {e}")
 
