@@ -53,11 +53,9 @@ def seed_vegan_data():
         f = Fornecedor(
             razao_social=nome_empresa + " LTDA",
             nome_fantasia=nome_empresa,
-            nome_contato=contato if hasattr(Fornecedor, 'nome_contato') else None, # Check safety, strictly it's not in model
             email=random_email(contato),
             telefone=random_phone(),
             cnpj=fake_cnpj
-            # categoria removed as it is not in the model
         )
         db.session.add(f)
         fornecedores.append(f)
