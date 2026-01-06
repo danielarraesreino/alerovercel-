@@ -14,8 +14,11 @@ except locale.Error:
         try:
             locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')
         except locale.Error:
-            locale.setlocale(locale.LC_ALL, '')
-            print('Aviso: Não foi possível configurar locale brasileiro.')
+            try:
+                locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+            except locale.Error:
+                print('Aviso: Não foi possível configurar locale brasileiro. Usando padrão do sistema.')
+                pass
 
 def formatar_moeda(valor):
     """
