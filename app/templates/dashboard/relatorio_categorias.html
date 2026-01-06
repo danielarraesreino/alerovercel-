@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Relatório de Lucratividade por Categoria</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card-dashboard {
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-dashboard:hover {
+            transform: translateY(-5px);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .dashboard-subtitle {
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #495057;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .bg-high-margin {
+            background-color: #d4edda;
+        }
+        .bg-medium-margin {
+            background-color: #fff3cd;
+        }
+        .bg-low-margin {
+            background-color: #f8d7da;
+        }
+        .text-profit {
+            color: #28a745;
+        }
+        .text-loss {
+            color: #dc3545;
+        }
+        .metric-card {
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .metric-card .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        .metric-card .title {
+            font-size: 1rem;
+            color: #6c757d;
+        }
+        .revenue-card {
+            background-color: #cce5ff;
+            border: 1px solid #b8daff;
+        }
+        .cost-card {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+        }
+        .profit-card {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .margin-card {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+        }
+        .filter-form {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .categoria-badge {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+        }
+        .badge-secao {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        .badge-categoria {
+            background-color: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#">Relatórios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Estoque</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row align-items-center mb-4">
+            <div class="col-md-8">
+                <h1 class="mb-0">Relatório de Lucratividade por Categoria</h1>
+                <p class="text-muted">{{ data_inicio }} a {{ data_fim }}</p>
+            </div>
+            <div class="col-md-4 text-right">
+                <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Filtro de período -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="filter-form">
+                    <form method="get" action="" class="form-inline">
+                        <div class="form-group mx-sm-3">
+                            <label for="data_inicio" class="mr-2">De:</label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                        </div>
+                        <div class="form-group mx-sm-3">
+                            <label for="data_fim" class="mr-2">Até:</label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Filtrar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métricas resumidas -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="metric-card revenue-card">
+                    <div class="title">Receita Total</div>
+                    <div class="value">R$ {{ "%.2f"|format(total_receita) }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card cost-card">
+                    <div class="title">Custo Total</div>
+                    <div class="value">R$ {{ "%.2f"|format(total_custo) }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card profit-card">
+                    <div class="title">Lucro Total</div>
+                    <div class="value">R$ {{ "%.2f"|format(total_lucro) }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card margin-card">
+                    <div class="title">Margem Média</div>
+                    <div class="value">{{ "%.1f"|format(margem_media) }}%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráficos de Análise -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card card-dashboard">
+                    <div class="card-body">
+                        <h5 class="card-title">Receitas por Categoria</h5>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card card-dashboard">
+                    <div class="card-body">
+                        <h5 class="card-title">Margens por Categoria</h5>
+                        <div class="chart-container">
+                            <canvas id="marginChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Categorias -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-body">
+                        <h5 class="card-title">Desempenho por Categoria</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Categoria</th>
+                                        <th class="text-center">Tipo</th>
+                                        <th class="text-right">Quantidade</th>
+                                        <th class="text-right">Receita</th>
+                                        <th class="text-right">Custo</th>
+                                        <th class="text-right">Lucro</th>
+                                        <th class="text-right">Margem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for categoria in categorias %}
+                                    <tr class="{% if categoria.margem >= 30 %}bg-high-margin{% elif categoria.margem >= 15 %}bg-medium-margin{% elif categoria.margem < 0 %}bg-low-margin{% endif %}">
+                                        <td>{{ categoria.categoria }}</td>
+                                        <td class="text-center">
+                                            <span class="categoria-badge {% if categoria.tipo == 'Seção' %}badge-secao{% else %}badge-categoria{% endif %}">
+                                                {{ categoria.tipo }}
+                                            </span>
+                                        </td>
+                                        <td class="text-right">{{ categoria.quantidade }}</td>
+                                        <td class="text-right">R$ {{ "%.2f"|format(categoria.receita) }}</td>
+                                        <td class="text-right">R$ {{ "%.2f"|format(categoria.custo) }}</td>
+                                        <td class="text-right {% if categoria.lucro > 0 %}text-profit{% else %}text-loss{% endif %}">R$ {{ "%.2f"|format(categoria.lucro) }}</td>
+                                        <td class="text-right">{{ "%.1f"|format(categoria.margem) }}%</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Análise e Recomendações -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-body">
+                        <h5 class="card-title">Análise e Recomendações</h5>
+                        
+                        <h6 class="mt-3">Categorias mais lucrativas:</h6>
+                        <ul class="list-group mb-3">
+                            {% for categoria in categorias[:3] if categoria.margem > 0 %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ categoria.categoria }} ({{ categoria.tipo }})
+                                <span class="badge badge-success badge-pill">{{ "%.1f"|format(categoria.margem) }}%</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        
+                        <h6>Categorias menos lucrativas:</h6>
+                        <ul class="list-group mb-3">
+                            {% for categoria in categorias|reverse %}{% if loop.index <= 3 and categoria.margem < 20 %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ categoria.categoria }} ({{ categoria.tipo }})
+                                <span class="badge {% if categoria.margem < 0 %}badge-danger{% else %}badge-warning{% endif %} badge-pill">{{ "%.1f"|format(categoria.margem) }}%</span>
+                            </li>
+                            {% endif %}{% endfor %}
+                        </ul>
+                        
+                        <div class="alert alert-info mt-4">
+                            <h6 class="alert-heading"><i class="fas fa-lightbulb"></i> Dicas para Otimização:</h6>
+                            <ul>
+                                <li>Considere destacar mais as categorias com alta margem de lucro no cardápio.</li>
+                                <li>Avalie a possibilidade de ajustar os preços ou reduzir custos em categorias com margem abaixo de 15%.</li>
+                                <li>Analise a viabilidade de manter categorias com margem negativa, considerando seu valor estratégico.</li>
+                                <li>Utilize dados da previsão de demanda para otimizar o estoque nas categorias mais vendidas.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script>
+        // Dados para os gráficos
+        const dadosGrafico = JSON.parse('{{ dados_grafico|safe }}');
+        
+        // Gráfico de Receitas
+        const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctxRevenue, {
+            type: 'bar',
+            data: {
+                labels: dadosGrafico.categorias,
+                datasets: [{
+                    label: 'Receita (R$)',
+                    data: dadosGrafico.receitas,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toFixed(2);
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Receita: R$ ' + context.parsed.y.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Gráfico de Margens
+        const ctxMargin = document.getElementById('marginChart').getContext('2d');
+        new Chart(ctxMargin, {
+            type: 'bar',
+            data: {
+                labels: dadosGrafico.categorias,
+                datasets: [{
+                    label: 'Margem (%)',
+                    data: dadosGrafico.margens,
+                    backgroundColor: function(context) {
+                        const value = context.raw;
+                        if (value >= 30) return 'rgba(40, 167, 69, 0.7)';
+                        else if (value >= 15) return 'rgba(255, 193, 7, 0.7)';
+                        else if (value < 0) return 'rgba(220, 53, 69, 0.7)';
+                        else return 'rgba(108, 117, 125, 0.7)';
+                    },
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(1) + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Margem: ' + context.parsed.y.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Produto{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Novo Produto</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Cadastro de Produto</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('estoque.novo_produto') }}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="nome">Nome do Produto *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="codigo">Código</label>
+                            <input type="text" class="form-control" id="codigo" name="codigo">
+                            <small class="form-text text-muted">Código interno ou EAN/GTIN (opcional)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="descricao">Descrição</label>
+                    <textarea class="form-control" id="descricao" name="descricao" rows="3"></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="unidade">Unidade de Medida *</label>
+                            <select class="form-control" id="unidade" name="unidade" required>
+                                <option value="">Selecione...</option>
+                                <option value="kg">Quilograma (kg)</option>
+                                <option value="g">Grama (g)</option>
+                                <option value="l">Litro (l)</option>
+                                <option value="ml">Mililitro (ml)</option>
+                                <option value="un">Unidade (un)</option>
+                                <option value="cx">Caixa (cx)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="preco_unitario">Preço Unitário (R$)</label>
+                            <input type="number" class="form-control" id="preco_unitario" name="preco_unitario" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="fornecedor_id">Fornecedor</label>
+                            <select class="form-control" id="fornecedor_id" name="fornecedor_id">
+                                <option value="">Selecione...</option>
+                                {% for fornecedor in fornecedores %}
+                                <option value="{{ fornecedor.id }}">{{ fornecedor.razao_social }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="estoque_minimo">Estoque Mínimo</label>
+                            <input type="number" class="form-control" id="estoque_minimo" name="estoque_minimo" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="estoque_atual">Estoque Inicial</label>
+                            <input type="number" class="form-control" id="estoque_atual" name="estoque_atual" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="categoria">Categoria</label>
+                            <input type="text" class="form-control" id="categoria" name="categoria">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="marca">Marca</label>
+                    <input type="text" class="form-control" id="marca" name="marca">
+                </div>
+
+                <div class="form-group text-right">
+                    <a href="{{ url_for('estoque.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

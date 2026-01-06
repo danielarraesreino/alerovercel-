@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Categorias de Desperdício</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card-dashboard {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-dashboard .card-header {
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+        }
+        .categoria-card {
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        .categoria-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .categoria-header {
+            padding: 15px;
+            border-radius: 8px 8px 0 0;
+            color: white;
+        }
+        .categoria-body {
+            padding: 15px;
+        }
+        .categoria-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        .categoria-actions a {
+            margin-left: 8px;
+        }
+        .categoria-inactive {
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.index') }}">Desperdício</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Categorias</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2><i class="fas fa-tags text-primary"></i> Categorias de Desperdício</h2>
+                <p class="text-muted">Gerencie as categorias para classificação de desperdício</p>
+            </div>
+            <div class="col-md-4 text-right">
+                <a href="{{ url_for('desperdicio.criar_categoria') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Nova Categoria
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            {% if categorias %}
+                {% for categoria in categorias %}
+                    <div class="col-md-4">
+                        <div class="categoria-card {% if not categoria.ativo %}categoria-inactive{% endif %}">
+                            <div class="categoria-header" style="background-color: {{ categoria.cor }};">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-tag categoria-icon"></i>
+                                        <span class="h5 mb-0">{{ categoria.nome }}</span>
+                                    </div>
+                                    <div class="categoria-actions">
+                                        <a href="{{ url_for('desperdicio.editar_categoria', id=categoria.id) }}" class="text-white" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="categoria-body">
+                                <div class="mb-3">
+                                    {% if categoria.descricao %}
+                                        <p class="mb-0">{{ categoria.descricao }}</p>
+                                    {% else %}
+                                        <p class="text-muted mb-0"><i>Sem descrição</i></p>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {% if categoria.ativo %}
+                                            <span class="badge badge-success">Ativo</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">Inativo</span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <a href="{{ url_for('desperdicio.listar_registros', categoria_id=categoria.id) }}" class="btn btn-sm btn-outline-secondary">
+                                            Ver Registros
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Nenhuma categoria de desperdício cadastrada. 
+                        <a href="{{ url_for('desperdicio.criar_categoria') }}" class="alert-link">Criar uma categoria</a>.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-light">
+                        <i class="fas fa-info-circle"></i> Sobre Categorias de Desperdício
+                    </div>
+                    <div class="card-body">
+                        <p>As categorias de desperdício ajudam a classificar e analisar as diferentes causas e tipos de desperdício no seu estabelecimento.</p>
+                        <p>Exemplos de categorias comuns:</p>
+                        <ul>
+                            <li><strong>Sobras de produção</strong> - Alimentos preparados e não vendidos</li>
+                            <li><strong>Vencimento</strong> - Produtos que expiraram antes de serem utilizados</li>
+                            <li><strong>Armazenamento inadequado</strong> - Perda por má conservação</li>
+                            <li><strong>Erro de preparo</strong> - Pratos preparados incorretamente</li>
+                            <li><strong>Devolução de cliente</strong> - Itens devolvidos por clientes</li>
+                        </ul>
+                        <p class="mb-0">Cada categoria pode ser associada a uma cor para facilitar a identificação visual em relatórios e gráficos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

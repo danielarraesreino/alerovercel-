@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Criar Meta de Redução de Desperdício</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .tipo-meta-card {
+            cursor: pointer;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .tipo-meta-card:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .tipo-meta-card.selected {
+            border-color: #007bff;
+            background-color: #e9f7ff;
+        }
+        .tipo-meta-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+        .categoria-badge {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.index') }}">Desperdício</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.listar_metas') }}">Metas</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Criar Meta</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="form-container">
+                    <h2 class="form-title">Criar Nova Meta de Redução</h2>
+                    <p class="text-muted">Defina uma meta para reduzir o desperdício no seu estabelecimento</p>
+
+                    <form method="post" action="{{ url_for('desperdicio.criar_meta') }}">
+                        <div class="form-group">
+                            <label for="nome">Nome da Meta *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required>
+                            <small class="form-text text-muted">Ex: Redução de sobras do almoço, Redução de vencidos, etc.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descricao">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="3"></textarea>
+                            <small class="form-text text-muted">Uma breve descrição desta meta (opcional)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tipo de Meta *</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="tipo-meta-card" data-tipo="valor">
+                                        <div class="text-center">
+                                            <div class="tipo-meta-icon">
+                                                <i class="fas fa-dollar-sign"></i>
+                                            </div>
+                                            <div>Valor (R$)</div>
+                                            <small class="text-muted">Redução em reais</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="tipo-meta-card" data-tipo="quantidade">
+                                        <div class="text-center">
+                                            <div class="tipo-meta-icon">
+                                                <i class="fas fa-balance-scale"></i>
+                                            </div>
+                                            <div>Quantidade</div>
+                                            <small class="text-muted">Redução em ocorrências</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="tipo-meta-card" data-tipo="percentual">
+                                        <div class="text-center">
+                                            <div class="tipo-meta-icon">
+                                                <i class="fas fa-percentage"></i>
+                                            </div>
+                                            <div>Percentual</div>
+                                            <small class="text-muted">Redução em porcentagem</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="tipo" name="tipo" value="" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="valor_meta">Valor da Meta *</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="meta-prefix">R$</span>
+                                </div>
+                                <input type="number" class="form-control" id="valor_meta" name="valor_meta" step="0.01" min="0.01" required>
+                                <div class="input-group-append">
+                                    <span class="input-group-text" id="meta-suffix"></span>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted" id="meta-help">Valor a ser reduzido em reais</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="valor_referencia">Valor de Referência</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="ref-prefix">R$</span>
+                                </div>
+                                <input type="number" class="form-control" id="valor_referencia" name="valor_referencia" step="0.01" min="0">
+                                <div class="input-group-append">
+                                    <span class="input-group-text" id="ref-suffix"></span>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted" id="ref-help">Valor base para cálculo do progresso (opcional). Se não informado, será calculado automaticamente com base no período anterior.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="categoria_id">Categoria</label>
+                            <select class="form-control" id="categoria_id" name="categoria_id">
+                                <option value="">Todas as categorias</option>
+                                {% for categoria in categorias %}
+                                    {% if categoria.ativo %}
+                                        <option value="{{ categoria.id }}">
+                                            <span class="categoria-badge" style="background-color: {{ categoria.cor }}"></span>
+                                            {{ categoria.nome }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Selecione uma categoria específica ou deixe em branco para todas</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_inicio">Data Inicial *</label>
+                                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_fim">Data Final *</label>
+                                    <input type="date" class="form-control" id="data_fim" name="data_fim" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="ativo" name="ativo" checked>
+                                <label class="custom-control-label" for="ativo">Meta Ativa</label>
+                            </div>
+                            <small class="form-text text-muted">Desative para pausar o monitoramento desta meta</small>
+                        </div>
+
+                        <div class="form-group text-right mt-4">
+                            <a href="{{ url_for('desperdicio.listar_metas') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Meta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Definir data atual como padrão para data inicial
+            const hoje = new Date();
+            const dataInicialStr = hoje.toISOString().split('T')[0];
+            $('#data_inicio').val(dataInicialStr);
+            
+            // Definir data final como 1 mês depois por padrão
+            const dataFinal = new Date(hoje);
+            dataFinal.setMonth(dataFinal.getMonth() + 1);
+            const dataFinalStr = dataFinal.toISOString().split('T')[0];
+            $('#data_fim').val(dataFinalStr);
+            
+            // Selecionar tipo de meta
+            $('.tipo-meta-card').click(function() {
+                $('.tipo-meta-card').removeClass('selected');
+                $(this).addClass('selected');
+                var tipo = $(this).data('tipo');
+                $('#tipo').val(tipo);
+                
+                // Atualizar interface de acordo com o tipo
+                if (tipo === 'valor') {
+                    $('#meta-prefix').text('R$');
+                    $('#meta-suffix').text('');
+                    $('#meta-help').text('Valor a ser reduzido em reais');
+                    $('#ref-prefix').text('R$');
+                    $('#ref-suffix').text('');
+                    $('#ref-help').text('Valor base para cálculo do progresso (opcional)');
+                } else if (tipo === 'quantidade') {
+                    $('#meta-prefix').text('');
+                    $('#meta-suffix').text('ocorrências');
+                    $('#meta-help').text('Número de ocorrências a serem reduzidas');
+                    $('#ref-prefix').text('');
+                    $('#ref-suffix').text('ocorrências');
+                    $('#ref-help').text('Número base de ocorrências para cálculo do progresso (opcional)');
+                } else if (tipo === 'percentual') {
+                    $('#meta-prefix').text('');
+                    $('#meta-suffix').text('%');
+                    $('#meta-help').text('Percentual de redução desejado');
+                    $('#ref-prefix').text('R$');
+                    $('#ref-suffix').text('');
+                    $('#ref-help').text('Valor base em reais para cálculo do percentual (opcional)');
+                }
+            });
+            
+            // Selecionar o primeiro tipo por padrão
+            $('.tipo-meta-card[data-tipo="valor"]').click();
+        });
+    </script>
+</body>
+</html>

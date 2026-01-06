@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Visualizar Fator de Sazonalidade</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .detail-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .detail-header {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #6c757d;
+        }
+        .detail-value {
+            font-size: 1.1rem;
+        }
+        .fator-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            background-color: #17a2b8;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .fator-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .fator-value-positivo {
+            color: #28a745;
+        }
+        .fator-value-negativo {
+            color: #dc3545;
+        }
+        .fator-value-neutro {
+            color: #6c757d;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .card-dashboard {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-dashboard .card-header {
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.index') }}">Previsão</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.listar_fatores_sazonalidade') }}">Fatores de Sazonalidade</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Visualizar Fator</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <div class="detail-container">
+                    <div class="detail-header d-flex justify-content-between align-items-center">
+                        <h2>
+                            <i class="fas fa-calendar-alt text-primary"></i> {{ fator.nome }}
+                        </h2>
+                        <div>
+                            <a href="{{ url_for('previsao.editar_fator_sazonalidade', id=fator.id) }}" class="btn btn-outline-primary mr-2">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <a href="{{ url_for('previsao.listar_fatores_sazonalidade') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="fator-badge">
+                                {% if fator.tipo == 'dia_semana' %}
+                                    <i class="fas fa-calendar-day mr-2"></i> Dia da Semana
+                                {% elif fator.tipo == 'mes' %}
+                                    <i class="fas fa-calendar-alt mr-2"></i> Mês
+                                {% elif fator.tipo == 'clima' %}
+                                    <i class="fas fa-cloud-sun-rain mr-2"></i> Clima
+                                {% elif fator.tipo == 'periodo_dia' %}
+                                    <i class="fas fa-clock mr-2"></i> Período do Dia
+                                {% elif fator.tipo == 'evento' %}
+                                    <i class="fas fa-star mr-2"></i> Evento Especial
+                                {% else %}
+                                    <i class="fas fa-plus-circle mr-2"></i> Outro
+                                {% endif %}
+                            </div>
+                            
+                            {% if fator.descricao %}
+                                <p>{{ fator.descricao }}</p>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <div class="detail-label">Impacto na Demanda</div>
+                                <div class="detail-value fator-value 
+                                    {% if fator.fator > 1 %}fator-value-positivo
+                                    {% elif fator.fator < 1 %}fator-value-negativo
+                                    {% else %}fator-value-neutro{% endif %}
+                                ">
+                                    {% if fator.fator > 1 %}+{% endif %}{{ ((fator.fator - 1) * 100)|int }}%
+                                </div>
+                                <p class="text-muted">
+                                    {% if fator.fator > 1 %}
+                                        Este fator aumenta a demanda em {{ ((fator.fator - 1) * 100)|int }}%
+                                    {% elif fator.fator < 1 %}
+                                        Este fator reduz a demanda em {{ ((1 - fator.fator) * 100)|int }}%
+                                    {% else %}
+                                        Este fator não afeta a demanda
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card card-dashboard">
+                                <div class="card-header bg-info text-white">
+                                    <i class="fas fa-info-circle"></i> Aplicação do Fator
+                                </div>
+                                <div class="card-body">
+                                    <p>Este fator de sazonalidade é aplicado automaticamente nas previsões de demanda quando:</p>
+                                    <ul>
+                                        {% if fator.tipo == 'dia_semana' %}
+                                            <li>O dia da semana da previsão corresponde a <strong>{{ fator.nome }}</strong></li>
+                                        {% elif fator.tipo == 'mes' %}
+                                            <li>O mês da previsão corresponde a <strong>{{ fator.nome }}</strong></li>
+                                        {% elif fator.tipo == 'clima' %}
+                                            <li>A condição climática é definida como <strong>{{ fator.nome }}</strong></li>
+                                        {% elif fator.tipo == 'periodo_dia' %}
+                                            <li>A previsão é para o período <strong>{{ fator.nome }}</strong></li>
+                                        {% elif fator.tipo == 'evento' %}
+                                            <li>Ocorre o evento <strong>{{ fator.nome }}</strong></li>
+                                        {% else %}
+                                            <li>A condição <strong>{{ fator.nome }}</strong> é aplicada</li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card card-dashboard">
+                                <div class="card-header bg-primary text-white">
+                                    <i class="fas fa-chart-line"></i> Impacto nas Previsões
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="chartImpacto"></canvas>
+                                    </div>
+                                    <p class="text-muted text-center mt-3">
+                                        Este gráfico mostra o impacto deste fator de sazonalidade em uma previsão de demanda base.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card card-dashboard">
+                                <div class="card-header bg-success text-white">
+                                    <i class="fas fa-lightbulb"></i> Recomendações
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled">
+                                        {% if fator.fator > 1 %}
+                                            <li class="mb-3">
+                                                <i class="fas fa-check-circle text-success mr-2"></i>
+                                                Aumente o estoque de ingredientes para atender ao aumento de demanda.
+                                            </li>
+                                            <li class="mb-3">
+                                                <i class="fas fa-check-circle text-success mr-2"></i>
+                                                Considere escalar mais funcionários durante este período.
+                                            </li>
+                                            <li class="mb-3">
+                                                <i class="fas fa-check-circle text-success mr-2"></i>
+                                                Prepare-se para um volume maior de vendas e ajuste a produção.
+                                            </li>
+                                        {% elif fator.fator < 1 %}
+                                            <li class="mb-3">
+                                                <i class="fas fa-check-circle text-success mr-2"></i>
+                                                Reduza o estoque de ingredientes pereçíveis para evitar desperdício.
+                                            </li>
+                                            <li class="mb-3">
+                                                <i class="fas fa-check-circle text-success mr-2"></i>
+                                                Considere promoções especiais para estimular as vendas neste período.
+                                            </li>
+                                            <li class="mb-3">
+                                                <i class="fas fa-check-circle text-success mr-2"></i>
+                                                Ajuste a escala de funcionários para otimizar custos.
+                                            </li>
+                                        {% else %}
+                                            <li class="mb-3">
+                                                <i class="fas fa-check-circle text-success mr-2"></i>
+                                                Mantenha os níveis normais de estoque e produção.
+                                            </li>
+                                            <li class="mb-3">
+                                                <i class="fas fa-check-circle text-success mr-2"></i>
+                                                Monitore se este fator realmente não afeta a demanda ao longo do tempo.
+                                            </li>
+                                        {% endif %}
+                                        <li>
+                                            <i class="fas fa-check-circle text-success mr-2"></i>
+                                            Reavalie periodicamente este fator para garantir que continua preciso.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card card-dashboard">
+                                <div class="card-header bg-warning text-dark">
+                                    <i class="fas fa-history"></i> Histórico de Aplicação
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Data</th>
+                                                    <th>Previsão</th>
+                                                    <th class="text-right">Impacto</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% if historico_aplicacoes %}
+                                                    {% for aplicacao in historico_aplicacoes %}
+                                                    <tr>
+                                                        <td>{{ aplicacao.data.strftime('%d/%m/%Y') }}</td>
+                                                        <td>
+                                                            <a href="{{ url_for('previsao.visualizar_previsao', id=aplicacao.previsao_id) }}">
+                                                                {{ aplicacao.previsao_nome }}
+                                                            </a>
+                                                        </td>
+                                                        <td class="text-right">
+                                                            <span class="{% if fator.fator > 1 %}text-success{% elif fator.fator < 1 %}text-danger{% endif %}">
+                                                                {% if fator.fator > 1 %}+{% endif %}{{ ((fator.fator - 1) * 100)|int }}%
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <tr>
+                                                        <td colspan="3" class="text-center">
+                                                            <i class="fas fa-info-circle text-muted"></i>
+                                                            Este fator ainda não foi aplicado em nenhuma previsão.
+                                                        </td>
+                                                    </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Configurar gráfico de impacto
+        const ctx = document.getElementById('chartImpacto').getContext('2d');
+        
+        // Valores base de exemplo para demonstração
+        const demandaBase = [100, 100, 100, 100, 100, 100, 100];
+        const demandaAjustada = demandaBase.map(valor => valor * {{ fator.fator }});
+        const labels = ['Dia 1', 'Dia 2', 'Dia 3', 'Dia 4', 'Dia 5', 'Dia 6', 'Dia 7'];
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Demanda Base',
+                    data: demandaBase,
+                    borderColor: '#6c757d',
+                    backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                    borderWidth: 2,
+                    fill: true
+                },
+                {
+                    label: 'Demanda Ajustada com Fator',
+                    data: demandaAjustada,
+                    borderColor: {% if fator.fator > 1 %}'#28a745'{% elif fator.fator < 1 %}'#dc3545'{% else %}'#17a2b8'{% endif %},
+                    backgroundColor: {% if fator.fator > 1 %}'rgba(40, 167, 69, 0.1)'{% elif fator.fator < 1 %}'rgba(220, 53, 69, 0.1)'{% else %}'rgba(23, 162, 184, 0.1)'{% endif %},
+                    borderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Demanda'
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Visualizar Previsão</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .card-previsao {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-header-previsao {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .confiabilidade-alta {
+            color: #28a745;
+        }
+        .confiabilidade-media {
+            color: #fd7e14;
+        }
+        .confiabilidade-baixa {
+            color: #dc3545;
+        }
+        .badge-algoritmo {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .previsao-data {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .item-previsao {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .item-previsao:last-child {
+            border-bottom: none;
+        }
+        .item-nome {
+            font-weight: bold;
+        }
+        .item-categoria {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .item-valor {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .filtro-categoria {
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background-color: #f8f9fa;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+        .filtro-categoria:hover {
+            background-color: #e9ecef;
+        }
+        .filtro-categoria.active {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.index') }}">Previsão</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.listar_previsoes') }}">Previsões de Demanda</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{ previsao.nome }}</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <h1>{{ previsao.nome }}</h1>
+                <p class="text-muted">{{ previsao.descricao }}</p>
+                <div class="mb-3">
+                    <span class="badge badge-algoritmo">{{ previsao.algoritmo|replace('_', ' ')|title }}</span>
+                    <span class="badge {% if previsao.considera_sazonalidade %}badge-success{% else %}badge-secondary{% endif %}">
+                        {% if previsao.considera_sazonalidade %}Com Sazonalidade{% else %}Sem Sazonalidade{% endif %}
+                    </span>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="previsao-data">
+                            <i class="far fa-calendar-alt"></i> Criada em: {{ previsao.data_criacao.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="
+                            {% if previsao.confiabilidade >= 0.7 %}confiabilidade-alta
+                            {% elif previsao.confiabilidade >= 0.4 %}confiabilidade-media
+                            {% else %}confiabilidade-baixa{% endif %}
+                        ">
+                            <i class="fas fa-chart-pie"></i> Confiabilidade: {{ (previsao.confiabilidade * 100)|int }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-right">
+                <a href="{{ url_for('previsao.gerar_previsao') }}" class="btn btn-primary">
+                    <i class="fas fa-chart-line"></i> Gerar Nova Previsão
+                </a>
+                <a href="#" class="btn btn-outline-success ml-2" onclick="window.print()">
+                    <i class="fas fa-print"></i> Imprimir
+                </a>
+            </div>
+        </div>
+
+        <!-- Gráfico de Previsão -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-previsao">
+                    <div class="card-header card-header-previsao">
+                        <h5 class="mb-0">Gráfico de Previsão</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="previsaoChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detalhes da Previsão -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-previsao">
+                    <div class="card-header card-header-previsao">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Detalhes da Previsão por Item</h5>
+                            <div>
+                                <input type="text" class="form-control form-control-sm" id="filtro-item" placeholder="Filtrar itens...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="filtro-categoria active" data-categoria="todos">Todos</div>
+                            {% for categoria in categorias %}
+                            <div class="filtro-categoria" data-categoria="{{ categoria }}">{{ categoria }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Categoria</th>
+                                        <th>Previsão Total</th>
+                                        <th>Média Diária</th>
+                                        <th>Confiabilidade</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in itens_previsao %}
+                                    <tr class="item-row" data-categoria="{{ item.categoria }}" data-nome="{{ item.prato.nome }}">
+                                        <td>
+                                            <div class="item-nome">{{ item.prato.nome }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-secondary">{{ item.categoria }}</span>
+                                        </td>
+                                        <td class="item-valor">{{ item.total }}</td>
+                                        <td>{{ "%.1f"|format(item.media_diaria) }}</td>
+                                        <td>
+                                            <div class="progress" style="height: 5px;">
+                                                <div class="progress-bar {% if item.confiabilidade >= 0.7 %}bg-success{% elif item.confiabilidade >= 0.4 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ (item.confiabilidade * 100)|int }}%" 
+                                                     aria-valuenow="{{ (item.confiabilidade * 100)|int }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <small>{{ (item.confiabilidade * 100)|int }}%</small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informações Adicionais -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card card-previsao">
+                    <div class="card-header card-header-previsao">
+                        <h5 class="mb-0">Parâmetros da Previsão</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Período de Previsão</span>
+                                <span class="badge badge-primary badge-pill">{{ previsao.dias_previsao }} dias</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Algoritmo</span>
+                                <span class="badge badge-info badge-pill">{{ previsao.algoritmo|replace('_', ' ')|title }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Considera Sazonalidade</span>
+                                <span class="badge {% if previsao.considera_sazonalidade %}badge-success{% else %}badge-secondary{% endif %} badge-pill">
+                                    {% if previsao.considera_sazonalidade %}Sim{% else %}Não{% endif %}
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Total de Itens</span>
+                                <span class="badge badge-primary badge-pill">{{ previsao.total_itens }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Período Analisado</span>
+                                <span>{{ previsao.data_inicio.strftime('%d/%m/%Y') }} a {{ previsao.data_fim.strftime('%d/%m/%Y') }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card card-previsao">
+                    <div class="card-header card-header-previsao">
+                        <h5 class="mb-0">Recomendações</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> <strong>Dica:</strong> Utilize esta previsão para planejar a produção e compra de insumos para os próximos {{ previsao.dias_previsao }} dias.
+                        </div>
+                        
+                        <h6 class="mt-3">Itens com maior demanda prevista:</h6>
+                        <ul>
+                            {% for item in top_itens %}
+                            <li><strong>{{ item.prato.nome }}</strong> - {{ item.total }} unidades</li>
+                            {% endfor %}
+                        </ul>
+                        
+                        <h6 class="mt-3">Categorias com maior demanda:</h6>
+                        <ul>
+                            {% for categoria in top_categorias %}
+                            <li><strong>{{ categoria.nome }}</strong> - {{ categoria.total }} unidades</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Filtrar itens por texto
+            $('#filtro-item').on('keyup', function() {
+                var value = $(this).val().toLowerCase();
+                $('.item-row').filter(function() {
+                    $(this).toggle($(this).data('nome').toLowerCase().indexOf(value) > -1)
+                });
+            });
+            
+            // Filtrar por categoria
+            $('.filtro-categoria').on('click', function() {
+                $('.filtro-categoria').removeClass('active');
+                $(this).addClass('active');
+                
+                var categoria = $(this).data('categoria');
+                if (categoria === 'todos') {
+                    $('.item-row').show();
+                } else {
+                    $('.item-row').hide();
+                    $('.item-row[data-categoria="' + categoria + '"]').show();
+                }
+            });
+            
+            // Configurar o gráfico de previsão
+            var ctx = document.getElementById('previsaoChart').getContext('2d');
+            var previsaoChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {{ datas|safe }},
+                    datasets: [{
+                        label: 'Histórico',
+                        data: {{ historico|safe }},
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Previsão',
+                        data: {{ previsao_valores|safe }},
+                        backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        borderDash: [5, 5],
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Quantidade'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Data'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            padding: 10,
+                            titleFont: {
+                                size: 14
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            displayColors: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

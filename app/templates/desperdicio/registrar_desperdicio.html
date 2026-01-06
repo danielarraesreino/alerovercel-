@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Registrar Desperdício</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .tipo-item-card {
+            cursor: pointer;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .tipo-item-card:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .tipo-item-card.selected {
+            border-color: #007bff;
+            background-color: #e9f7ff;
+        }
+        .tipo-item-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+        .categoria-badge {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.index') }}">Desperdício</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.listar_registros') }}">Registros</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Registrar Desperdício</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="form-container">
+                    <h2 class="form-title">Registrar Novo Desperdício</h2>
+                    <p class="text-muted">Registre ocorrências de desperdício para monitoramento e análise</p>
+
+                    <form method="post" action="{{ url_for('desperdicio.registrar_desperdicio') }}">
+                        <div class="form-group">
+                            <label>Tipo de Item *</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="tipo-item-card" data-tipo="produto">
+                                        <div class="text-center">
+                                            <div class="tipo-item-icon">
+                                                <i class="fas fa-box"></i>
+                                            </div>
+                                            <div>Produto</div>
+                                            <small class="text-muted">Ingredientes, insumos, etc.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="tipo-item-card" data-tipo="prato">
+                                        <div class="text-center">
+                                            <div class="tipo-item-icon">
+                                                <i class="fas fa-utensils"></i>
+                                            </div>
+                                            <div>Prato</div>
+                                            <small class="text-muted">Pratos prontos, preparações</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="tipo_item" name="tipo_item" value="" required>
+                        </div>
+
+                        <div id="produto_select" class="form-group" style="display: none;">
+                            <label for="produto_id">Produto *</label>
+                            <select class="form-control" id="produto_id" name="produto_id">
+                                <option value="">Selecione um produto</option>
+                                {% for produto in produtos %}
+                                    <option value="{{ produto.id }}" data-unidade="{{ produto.unidade }}" data-valor="{{ produto.preco_unitario }}">
+                                        {{ produto.nome }} ({{ produto.unidade }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div id="prato_select" class="form-group" style="display: none;">
+                            <label for="prato_id">Prato *</label>
+                            <select class="form-control" id="prato_id" name="prato_id">
+                                <option value="">Selecione um prato</option>
+                                {% for prato in pratos %}
+                                    <option value="{{ prato.id }}" data-unidade="porção" data-valor="{{ prato.preco_venda }}">
+                                        {{ prato.nome }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="categoria_id">Categoria *</label>
+                            <select class="form-control" id="categoria_id" name="categoria_id" required>
+                                <option value="">Selecione uma categoria</option>
+                                {% for categoria in categorias %}
+                                    {% if categoria.ativo %}
+                                        <option value="{{ categoria.id }}">
+                                            <span class="categoria-badge" style="background-color: {{ categoria.cor }}"></span>
+                                            {{ categoria.nome }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="quantidade">Quantidade *</label>
+                                    <input type="number" class="form-control" id="quantidade" name="quantidade" step="0.01" min="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="unidade">Unidade *</label>
+                                    <input type="text" class="form-control" id="unidade" name="unidade" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="valor_estimado">Valor Estimado (R$) *</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">R$</span>
+                                </div>
+                                <input type="number" class="form-control" id="valor_estimado" name="valor_estimado" step="0.01" min="0" required>
+                            </div>
+                            <small class="form-text text-muted">Valor estimado do desperdício</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="data_registro">Data *</label>
+                            <input type="date" class="form-control" id="data_registro" name="data_registro" value="{{ hoje }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="observacao">Observação</label>
+                            <textarea class="form-control" id="observacao" name="observacao" rows="3"></textarea>
+                            <small class="form-text text-muted">Detalhes adicionais sobre o desperdício (opcional)</small>
+                        </div>
+
+                        <div class="form-group text-right mt-4">
+                            <a href="{{ url_for('desperdicio.listar_registros') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Registrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Selecionar tipo de item
+            $('.tipo-item-card').click(function() {
+                $('.tipo-item-card').removeClass('selected');
+                $(this).addClass('selected');
+                var tipo = $(this).data('tipo');
+                $('#tipo_item').val(tipo);
+                
+                // Mostrar o select apropriado
+                if (tipo === 'produto') {
+                    $('#produto_select').show();
+                    $('#prato_select').hide();
+                    $('#prato_id').val('');
+                } else {
+                    $('#produto_select').hide();
+                    $('#prato_select').show();
+                    $('#produto_id').val('');
+                }
+                
+                // Limpar campos
+                $('#unidade').val('');
+                $('#valor_estimado').val('');
+            });
+            
+            // Atualizar unidade e valor quando selecionar um produto
+            $('#produto_id').change(function() {
+                var selectedOption = $(this).find('option:selected');
+                var unidade = selectedOption.data('unidade');
+                var valor = selectedOption.data('valor');
+                
+                $('#unidade').val(unidade);
+                $('#valor_estimado').val(valor);
+            });
+            
+            // Atualizar unidade e valor quando selecionar um prato
+            $('#prato_id').change(function() {
+                var selectedOption = $(this).find('option:selected');
+                var unidade = selectedOption.data('unidade');
+                var valor = selectedOption.data('valor');
+                
+                $('#unidade').val(unidade);
+                $('#valor_estimado').val(valor);
+            });
+            
+            // Atualizar valor estimado quando a quantidade mudar
+            $('#quantidade').on('input', function() {
+                var quantidade = parseFloat($(this).val()) || 0;
+                var valorUnitario = 0;
+                
+                if ($('#tipo_item').val() === 'produto' && $('#produto_id').val()) {
+                    valorUnitario = parseFloat($('#produto_id option:selected').data('valor')) || 0;
+                } else if ($('#tipo_item').val() === 'prato' && $('#prato_id').val()) {
+                    valorUnitario = parseFloat($('#prato_id option:selected').data('valor')) || 0;
+                }
+                
+                var valorTotal = quantidade * valorUnitario;
+                $('#valor_estimado').val(valorTotal.toFixed(2));
+            });
+            
+            // Selecionar o primeiro tipo por padrão
+            $('.tipo-item-card[data-tipo="produto"]').click();
+        });
+    </script>
+</body>
+</html>

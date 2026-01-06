@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Metas de Redução de Desperdício</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card-dashboard {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-dashboard .card-header {
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+        }
+        .meta-card {
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        .meta-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .meta-header {
+            padding: 15px;
+            border-radius: 8px 8px 0 0;
+            color: white;
+        }
+        .meta-body {
+            padding: 15px;
+        }
+        .meta-footer {
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-radius: 0 0 8px 8px;
+            border-top: 1px solid #eee;
+        }
+        .meta-progress {
+            height: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+        .meta-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        .meta-actions a {
+            margin-left: 8px;
+        }
+        .meta-inactive {
+            opacity: 0.6;
+        }
+        .categoria-badge {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.index') }}">Desperdício</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Metas</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2><i class="fas fa-bullseye text-primary"></i> Metas de Redução de Desperdício</h2>
+                <p class="text-muted">Defina e acompanhe metas para reduzir o desperdício no seu estabelecimento</p>
+            </div>
+            <div class="col-md-4 text-right">
+                <a href="{{ url_for('desperdicio.criar_meta') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Nova Meta
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            {% if metas %}
+                {% for meta in metas %}
+                    <div class="col-md-6">
+                        <div class="meta-card {% if not meta.ativo %}meta-inactive{% endif %}">
+                            <div class="meta-header bg-{{ 'success' if meta.progresso >= 80 else 'warning' if meta.progresso >= 50 else 'danger' }}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-bullseye meta-icon"></i>
+                                        <span class="h5 mb-0">{{ meta.nome }}</span>
+                                    </div>
+                                    <div class="meta-actions">
+                                        <a href="{{ url_for('desperdicio.visualizar_meta', id=meta.id) }}" class="text-white" title="Visualizar">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('desperdicio.editar_meta', id=meta.id) }}" class="text-white" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="meta-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="small text-muted">Tipo</div>
+                                        <div>
+                                            {% if meta.tipo == 'valor' %}
+                                                <i class="fas fa-dollar-sign"></i> Valor
+                                            {% elif meta.tipo == 'quantidade' %}
+                                                <i class="fas fa-balance-scale"></i> Quantidade
+                                            {% elif meta.tipo == 'percentual' %}
+                                                <i class="fas fa-percentage"></i> Percentual
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="small text-muted">Categoria</div>
+                                        <div>
+                                            {% if meta.categoria_id %}
+                                                <span class="categoria-badge" style="background-color: {{ meta.categoria.cor }}"></span>
+                                                {{ meta.categoria.nome }}
+                                            {% else %}
+                                                <span class="text-muted">Todas as categorias</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="small text-muted">Período</div>
+                                        <div>{{ meta.data_inicio.strftime('%d/%m/%Y') }} a {{ meta.data_fim.strftime('%d/%m/%Y') }}</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="small text-muted">Status</div>
+                                        <div>
+                                            {% if meta.ativo %}
+                                                <span class="badge badge-success">Ativa</span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">Inativa</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <div>Progresso</div>
+                                        <div>{{ meta.progresso }}%</div>
+                                    </div>
+                                    <div class="progress meta-progress">
+                                        <div class="progress-bar bg-{{ 'success' if meta.progresso >= 80 else 'warning' if meta.progresso >= 50 else 'danger' }}" 
+                                             role="progressbar" 
+                                             style="width: {{ meta.progresso }}%" 
+                                             aria-valuenow="{{ meta.progresso }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="small text-muted">
+                                    {% if meta.tipo == 'valor' %}
+                                        Meta: Reduzir R$ {{ "%.2f"|format(meta.valor_meta) }} | Atual: R$ {{ "%.2f"|format(meta.valor_atual) }}
+                                    {% elif meta.tipo == 'quantidade' %}
+                                        Meta: Reduzir {{ meta.valor_meta }} ocorrências | Atual: {{ meta.valor_atual }} ocorrências
+                                    {% elif meta.tipo == 'percentual' %}
+                                        Meta: Reduzir {{ meta.valor_meta }}% | Atual: {{ meta.valor_atual }}%
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="meta-footer">
+                                <a href="{{ url_for('desperdicio.visualizar_meta', id=meta.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-chart-line"></i> Ver Detalhes
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Nenhuma meta de redução de desperdício cadastrada. 
+                        <a href="{{ url_for('desperdicio.criar_meta') }}" class="alert-link">Criar uma meta</a>.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-light">
+                        <i class="fas fa-info-circle"></i> Sobre Metas de Redução
+                    </div>
+                    <div class="card-body">
+                        <p>As metas de redução de desperdício ajudam a estabelecer objetivos claros para diminuir o desperdício no seu estabelecimento.</p>
+                        <p>Vantagens de definir metas:</p>
+                        <ul>
+                            <li><strong>Monitoramento de progresso</strong> - Acompanhe a evolução da redução de desperdício</li>
+                            <li><strong>Motivação da equipe</strong> - Estabeleça objetivos claros para todos</li>
+                            <li><strong>Redução de custos</strong> - Diminua gastos com insumos desperdíc7ados</li>
+                            <li><strong>Sustentabilidade</strong> - Contribua para praáticas mais sustentaáveis</li>
+                        </ul>
+                        <p class="mb-0">Recomendamos criar metas específicas para cada categoria de desperdício e estabelecer prazos realísticos para alcancá-las.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

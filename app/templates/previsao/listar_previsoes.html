@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Previsões de Demanda</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .filtros-container {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .card-previsao {
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-previsao:hover {
+            transform: translateY(-5px);
+        }
+        .confiabilidade-alta {
+            color: #28a745;
+        }
+        .confiabilidade-media {
+            color: #fd7e14;
+        }
+        .confiabilidade-baixa {
+            color: #dc3545;
+        }
+        .badge-algoritmo {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .previsao-data {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.index') }}">Previsão</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Previsões de Demanda</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row align-items-center mb-4">
+            <div class="col-md-8">
+                <h1>Previsões de Demanda</h1>
+                <p class="text-muted">Visualize e analise as previsões de demanda geradas pelo sistema</p>
+            </div>
+            <div class="col-md-4 text-right">
+                <a href="{{ url_for('previsao.gerar_previsao') }}" class="btn btn-primary">
+                    <i class="fas fa-chart-line"></i> Gerar Nova Previsão
+                </a>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros-container">
+            <form method="get" action="{{ url_for('previsao.listar_previsoes') }}">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="algoritmo">Algoritmo:</label>
+                            <select class="form-control" id="algoritmo" name="algoritmo">
+                                <option value="" {% if not request.args.get('algoritmo') %}selected{% endif %}>Todos</option>
+                                <option value="media_movel" {% if request.args.get('algoritmo') == 'media_movel' %}selected{% endif %}>Média Móvel</option>
+                                <option value="regressao_linear" {% if request.args.get('algoritmo') == 'regressao_linear' %}selected{% endif %}>Regressão Linear</option>
+                                <option value="sazonalidade" {% if request.args.get('algoritmo') == 'sazonalidade' %}selected{% endif %}>Com Sazonalidade</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="confiabilidade">Confiabilidade Mínima:</label>
+                            <select class="form-control" id="confiabilidade" name="confiabilidade">
+                                <option value="" {% if not request.args.get('confiabilidade') %}selected{% endif %}>Qualquer</option>
+                                <option value="0.7" {% if request.args.get('confiabilidade') == '0.7' %}selected{% endif %}>Alta (70%+)</option>
+                                <option value="0.4" {% if request.args.get('confiabilidade') == '0.4' %}selected{% endif %}>Média (40%+)</option>
+                                <option value="0.2" {% if request.args.get('confiabilidade') == '0.2' %}selected{% endif %}>Baixa (20%+)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary mb-3 w-100">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista de Previsões -->
+        <div class="row">
+            {% for previsao in previsoes.items %}
+            <div class="col-md-6">
+                <div class="card card-previsao">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ previsao.nome }}</h5>
+                        <div class="mb-3">
+                            <span class="badge badge-algoritmo">{{ previsao.algoritmo|replace('_', ' ')|title }}</span>
+                            <span class="badge {% if previsao.considera_sazonalidade %}badge-success{% else %}badge-secondary{% endif %}">
+                                {% if previsao.considera_sazonalidade %}Com Sazonalidade{% else %}Sem Sazonalidade{% endif %}
+                            </span>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="previsao-data">
+                                    <i class="far fa-calendar-alt"></i> Criada em: {{ previsao.data_criacao.strftime('%d/%m/%Y %H:%M') }}
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-right">
+                                <div class="
+                                    {% if previsao.confiabilidade >= 0.7 %}confiabilidade-alta
+                                    {% elif previsao.confiabilidade >= 0.4 %}confiabilidade-media
+                                    {% else %}confiabilidade-baixa{% endif %}
+                                ">
+                                    <i class="fas fa-chart-pie"></i> Confiabilidade: {{ (previsao.confiabilidade * 100)|int }}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Período:</strong> {{ previsao.dias_previsao }} dias</p>
+                                <p class="mb-0"><strong>Itens:</strong> {{ previsao.total_itens }}</p>
+                            </div>
+                            <div class="col-md-6 text-right">
+                                <a href="{{ url_for('previsao.visualizar_previsao', id=previsao.id) }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i> Visualizar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Nenhuma previsão encontrada. 
+                    <a href="{{ url_for('previsao.gerar_previsao') }}" class="alert-link">Gere uma nova previsão</a> para começar.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginação -->
+        {% if previsoes.pages > 1 %}
+        <nav aria-label="Navegação de páginas" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if previsoes.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('previsao.listar_previsoes', page=previsoes.prev_num, algoritmo=request.args.get('algoritmo', ''), confiabilidade=request.args.get('confiabilidade', '')) }}">
+                        Anterior
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Anterior</span>
+                </li>
+                {% endif %}
+
+                {% for page_num in previsoes.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == previsoes.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('previsao.listar_previsoes', page=page_num, algoritmo=request.args.get('algoritmo', ''), confiabilidade=request.args.get('confiabilidade', '')) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if previsoes.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('previsao.listar_previsoes', page=previsoes.next_num, algoritmo=request.args.get('algoritmo', ''), confiabilidade=request.args.get('confiabilidade', '')) }}">
+                        Próximo
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Próximo</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

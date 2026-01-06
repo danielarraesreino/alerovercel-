@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Visualizar Prato{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ prato.nome }}</h1>
+        <a href="{{ url_for('pratos.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Detalhes do Prato</h6>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Categoria</dt>
+                <dd class="col-sm-9">{{ prato.categoria or '-' }}</dd>
+                <dt class="col-sm-3">Descrição</dt>
+                <dd class="col-sm-9">{{ prato.descricao or '-' }}</dd>
+                <dt class="col-sm-3">Rendimento</dt>
+                <dd class="col-sm-9">{{ prato.rendimento }} {{ prato.unidade_rendimento }}</dd>
+                <dt class="col-sm-3">Porções</dt>
+                <dd class="col-sm-9">{{ prato.porcoes_rendimento }}</dd>
+                <dt class="col-sm-3">Tempo de Preparo</dt>
+                <dd class="col-sm-9">{{ prato.tempo_preparo }} min</dd>
+                <dt class="col-sm-3">Margem de Lucro (%)</dt>
+                <dd class="col-sm-9">{{ prato.margem }}</dd>
+                <dt class="col-sm-3">Custo Indireto</dt>
+                <dd class="col-sm-9">R$ {{ prato.custo_indireto }}</dd>
+                <dt class="col-sm-3">Preço de Venda</dt>
+                <dd class="col-sm-9">R$ {{ prato.preco_venda }}</dd>
+            </dl>
+            <h5>Ingredientes</h5>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Quantidade</th>
+                        <th>Unidade</th>
+                        <th>Custo Unitário</th>
+                        <th>Custo Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for insumo in prato.insumos %}
+                    <tr>
+                        <td>{{ insumo.produto.nome }}</td>
+                        <td>{{ insumo.quantidade }}</td>
+                        <td>{{ insumo.produto.unidade_medida }}</td>
+                        <td>R$ {{ insumo.custo_unitario }}</td>
+                        <td>R$ {{ insumo.custo_total }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5">Nenhum ingrediente cadastrado.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

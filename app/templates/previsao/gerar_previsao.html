@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Gerar Previsão de Demanda</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .algoritmo-card {
+            cursor: pointer;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .algoritmo-card:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .algoritmo-card.selected {
+            border-color: #007bff;
+            background-color: #e9f7ff;
+        }
+        .algoritmo-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+        .algoritmo-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .algoritmo-desc {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .confiabilidade-alta {
+            color: #28a745;
+        }
+        .confiabilidade-media {
+            color: #fd7e14;
+        }
+        .confiabilidade-baixa {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.index') }}">Previsão</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.listar_previsoes') }}">Previsões de Demanda</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Gerar Previsão</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <div class="form-container">
+                    <h2 class="form-title">Gerar Nova Previsão de Demanda</h2>
+                    <p class="text-muted">Configure os parâmetros para gerar uma previsão de demanda baseada no histórico de vendas</p>
+
+                    {% if not registros_suficientes %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>Atenção:</strong> Você precisa de pelo menos 14 dias de registros de vendas para gerar previsões confiáveis. 
+                        <a href="{{ url_for('previsao.registrar_venda') }}" class="alert-link">Registre mais vendas</a> ou 
+                        <a href="{{ url_for('previsao.importar_historico') }}" class="alert-link">importe seu histórico</a>.
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="{{ url_for('previsao.gerar_previsao') }}">
+                        <div class="form-group">
+                            <label for="nome">Nome da Previsão *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required>
+                            <small class="form-text text-muted">Um nome descritivo para identificar esta previsão</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descricao">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="2"></textarea>
+                            <small class="form-text text-muted">Uma breve descrição do objetivo desta previsão (opcional)</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_inicio">Data Início para Análise</label>
+                                    <input type="date" class="form-control" id="data_inicio" name="data_inicio">
+                                    <small class="form-text text-muted">Deixe em branco para usar os últimos 30 dias</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_fim">Data Fim para Análise</label>
+                                    <input type="date" class="form-control" id="data_fim" name="data_fim">
+                                    <small class="form-text text-muted">Deixe em branco para usar até hoje</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dias_previsao">Período de Previsão (dias) *</label>
+                            <input type="number" class="form-control" id="dias_previsao" name="dias_previsao" min="1" max="30" value="7" required>
+                            <small class="form-text text-muted">Quantos dias à frente você deseja prever (recomendado: 7-14 dias)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Algoritmo de Previsão *</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="algoritmo-card" data-algoritmo="media_movel">
+                                        <div class="text-center">
+                                            <div class="algoritmo-icon">
+                                                <i class="fas fa-chart-line"></i>
+                                            </div>
+                                            <div class="algoritmo-title">Média Móvel</div>
+                                            <div class="algoritmo-desc">Utiliza a média de vendas de um período recente para fazer a previsão.</div>
+                                            <div class="mt-2 confiabilidade-media">Confiabilidade Média</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="algoritmo-card" data-algoritmo="regressao_linear">
+                                        <div class="text-center">
+                                            <div class="algoritmo-icon">
+                                                <i class="fas fa-chart-bar"></i>
+                                            </div>
+                                            <div class="algoritmo-title">Regressão Linear</div>
+                                            <div class="algoritmo-desc">Identifica tendências de crescimento ou queda nas vendas ao longo do tempo.</div>
+                                            <div class="mt-2 confiabilidade-alta">Confiabilidade Alta</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="algoritmo-card" data-algoritmo="combinado">
+                                        <div class="text-center">
+                                            <div class="algoritmo-icon">
+                                                <i class="fas fa-chart-pie"></i>
+                                            </div>
+                                            <div class="algoritmo-title">Combinado</div>
+                                            <div class="algoritmo-desc">Combina diferentes métodos para obter uma previsão mais robusta.</div>
+                                            <div class="mt-2 confiabilidade-alta">Confiabilidade Alta</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="algoritmo" name="algoritmo" value="combinado" required>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="considera_sazonalidade" name="considera_sazonalidade" checked>
+                                <label class="custom-control-label" for="considera_sazonalidade">Considerar fatores de sazonalidade</label>
+                            </div>
+                            <small class="form-text text-muted">Leva em conta dias da semana, períodos do dia, clima e eventos especiais</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tipo de Itens para Previsão</label>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="incluir_pratos" name="incluir_pratos" checked>
+                                <label class="custom-control-label" for="incluir_pratos">Incluir pratos</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="incluir_cardapio_itens" name="incluir_cardapio_itens" checked>
+                                <label class="custom-control-label" for="incluir_cardapio_itens">Incluir itens de cardápio</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="min_registros">Mínimo de registros por item</label>
+                            <input type="number" class="form-control" id="min_registros" name="min_registros" min="1" value="5">
+                            <small class="form-text text-muted">Quantidade mínima de registros históricos para incluir um item na previsão</small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> A geração da previsão pode levar alguns segundos dependendo da quantidade de dados. Não feche a página durante o processo.
+                        </div>
+
+                        <div class="form-group text-right mt-4">
+                            <a href="{{ url_for('previsao.listar_previsoes') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary"{% if not registros_suficientes %} disabled{% endif %}>
+                                <i class="fas fa-chart-line"></i> Gerar Previsão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Selecionar algoritmo
+            $('.algoritmo-card').click(function() {
+                $('.algoritmo-card').removeClass('selected');
+                $(this).addClass('selected');
+                var algoritmo = $(this).data('algoritmo');
+                $('#algoritmo').val(algoritmo);
+            });
+            
+            // Selecionar o algoritmo padrão (combinado)
+            $('.algoritmo-card[data-algoritmo="combinado"]').addClass('selected');
+        });
+    </script>
+</body>
+</html>

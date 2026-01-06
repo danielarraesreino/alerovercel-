@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Registrar Venda</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .prato-item {
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        .prato-item:hover {
+            background-color: #e9ecef;
+        }
+        .prato-item.selected {
+            background-color: #cfe2ff;
+            border: 1px solid #b8daff;
+        }
+        .item-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.index') }}">Previsão</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.listar_historico') }}">Histórico de Vendas</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Registrar Venda</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="form-container">
+                    <h2 class="form-title">Registrar Nova Venda</h2>
+                    <p class="text-muted">Adicione um registro de venda ao histórico para melhorar a precisão das previsões</p>
+
+                    <form method="post" action="{{ url_for('previsao.registrar_venda') }}">
+                        <div class="form-group">
+                            <label for="data">Data da Venda *</label>
+                            <input type="date" class="form-control" id="data" name="data" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tipo de Item *</label>
+                            <div class="custom-control custom-radio">
+                                <input type="radio" id="tipo_prato" name="tipo_item" value="prato" class="custom-control-input" checked>
+                                <label class="custom-control-label" for="tipo_prato">Prato</label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                                <input type="radio" id="tipo_cardapio" name="tipo_item" value="cardapio_item" class="custom-control-input">
+                                <label class="custom-control-label" for="tipo_cardapio">Item de Cardápio</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="pratos_container">
+                            <label for="prato_busca">Buscar Prato:</label>
+                            <input type="text" class="form-control" id="prato_busca" placeholder="Digite para filtrar pratos...">
+                            <input type="hidden" name="item_id" id="prato_id_selected" required>
+                            
+                            <div class="card mt-2">
+                                <div class="card-body p-0" style="max-height: 250px; overflow-y: auto;">
+                                    <div class="list-group list-group-flush" id="lista-pratos">
+                                        {% for prato in pratos %}
+                                        <div class="prato-item" data-id="{{ prato.id }}" data-preco="{{ prato.preco_venda }}">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1">{{ prato.nome }}</h6>
+                                                    <p class="item-info mb-0">{{ prato.descricao|truncate(60) }}</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="badge badge-primary">R$ {{ "%.2f"|format(prato.preco_venda) }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="cardapio_container" style="display: none;">
+                            <label for="cardapio_busca">Buscar Item de Cardápio:</label>
+                            <input type="text" class="form-control" id="cardapio_busca" placeholder="Digite para filtrar itens...">
+                            <input type="hidden" name="item_id" id="cardapio_id_selected">
+                            
+                            <div class="card mt-2">
+                                <div class="card-body p-0" style="max-height: 250px; overflow-y: auto;">
+                                    <div class="list-group list-group-flush" id="lista-cardapio">
+                                        {% for item in itens_cardapio %}
+                                        <div class="prato-item" data-id="{{ item.id }}" data-preco="{{ item.preco }}">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1">{{ item.prato.nome }}</h6>
+                                                    <p class="item-info mb-0">{{ item.secao.cardapio.nome }} - {{ item.secao.nome }}</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="badge badge-primary">R$ {{ "%.2f"|format(item.preco) }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="quantidade">Quantidade *</label>
+                                    <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" value="1" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="valor_unitario">Valor Unitário (R$) *</label>
+                                    <input type="number" class="form-control" id="valor_unitario" name="valor_unitario" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="periodo_dia">Período do Dia</label>
+                                    <select class="form-control" id="periodo_dia" name="periodo_dia">
+                                        <option value="">Selecione...</option>
+                                        <option value="Manhã">Manhã</option>
+                                        <option value="Almoço">Almoço</option>
+                                        <option value="Tarde">Tarde</option>
+                                        <option value="Jantar">Jantar</option>
+                                        <option value="Noite">Noite</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="clima">Clima</label>
+                                    <select class="form-control" id="clima" name="clima">
+                                        <option value="">Selecione...</option>
+                                        <option value="Ensolarado">Ensolarado</option>
+                                        <option value="Nublado">Nublado</option>
+                                        <option value="Chuvoso">Chuvoso</option>
+                                        <option value="Frio">Frio</option>
+                                        <option value="Quente">Quente</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="temperatura">Temperatura (u00b0C)</label>
+                                    <input type="number" class="form-control" id="temperatura" name="temperatura" step="0.1">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="evento_especial">Evento Especial</label>
+                                    <input type="text" class="form-control" id="evento_especial" name="evento_especial" list="eventos-sugeridos">
+                                    <datalist id="eventos-sugeridos">
+                                        <option value="Feriado">
+                                        <option value="Final de Semana">
+                                        <option value="Dia dos Namorados">
+                                        <option value="Natal">
+                                        <option value="Ano Novo">
+                                        <option value="Carnaval">
+                                        <option value="Páscoa">
+                                        <option value="Dia das Mães">
+                                        <option value="Dia dos Pais">
+                                        <option value="Evento Local">
+                                    </datalist>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle"></i> Informações como período do dia, clima e eventos especiais ajudam a melhorar a precisão das previsões de demanda.
+                        </div>
+
+                        <div class="form-group text-right mt-4">
+                            <a href="{{ url_for('previsao.listar_historico') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" name="adicionar_mais" class="btn btn-outline-primary">
+                                <i class="fas fa-save"></i> Salvar e Adicionar Outro
+                            </button>
+                            <button type="submit" name="finalizar" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar e Finalizar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Definir data atual como padrão
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0');
+            var yyyy = today.getFullYear();
+            today = yyyy + '-' + mm + '-' + dd;
+            $('#data').val(today);
+            
+            // Alternar entre pratos e itens de cardápio
+            $('input[name="tipo_item"]').change(function() {
+                if ($(this).val() === 'prato') {
+                    $('#pratos_container').show();
+                    $('#cardapio_container').hide();
+                    $('#prato_id_selected').prop('disabled', false);
+                    $('#cardapio_id_selected').prop('disabled', true);
+                } else {
+                    $('#pratos_container').hide();
+                    $('#cardapio_container').show();
+                    $('#prato_id_selected').prop('disabled', true);
+                    $('#cardapio_id_selected').prop('disabled', false);
+                }
+            });
+            
+            // Filtrar pratos ao digitar na busca
+            $('#prato_busca').on('keyup', function() {
+                var value = $(this).val().toLowerCase();
+                $('#lista-pratos .prato-item').filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+            
+            // Filtrar itens de cardápio ao digitar na busca
+            $('#cardapio_busca').on('keyup', function() {
+                var value = $(this).val().toLowerCase();
+                $('#lista-cardapio .prato-item').filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+            
+            // Selecionar prato ao clicar
+            $('#lista-pratos .prato-item').on('click', function() {
+                $('#lista-pratos .prato-item').removeClass('selected');
+                $(this).addClass('selected');
+                var pratoId = $(this).data('id');
+                var pratoPreco = $(this).data('preco');
+                $('#prato_id_selected').val(pratoId);
+                $('#valor_unitario').val(pratoPreco);
+            });
+            
+            // Selecionar item de cardápio ao clicar
+            $('#lista-cardapio .prato-item').on('click', function() {
+                $('#lista-cardapio .prato-item').removeClass('selected');
+                $(this).addClass('selected');
+                var itemId = $(this).data('id');
+                var itemPreco = $(this).data('preco');
+                $('#cardapio_id_selected').val(itemId);
+                $('#valor_unitario').val(itemPreco);
+            });
+        });
+    </script>
+</body>
+</html>

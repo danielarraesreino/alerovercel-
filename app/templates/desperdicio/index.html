@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}AleroPrice - Monitoramento de Desperdício{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-dashboard {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    .card-dashboard:hover {
+        transform: translateY(-5px);
+    }
+    .card-dashboard .card-header {
+        border-radius: 10px 10px 0 0;
+        font-weight: bold;
+    }
+    .card-dashboard .card-body {
+        padding: 1.5rem;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .categoria-badge {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    .meta-progress {
+        height: 10px;
+        border-radius: 5px;
+    }
+    .registro-item {
+        border-left: 4px solid #ddd;
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
+        border-radius: 0 5px 5px 0;
+    }
+    .chart-container {
+        position: relative;
+        height: 250px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="fas fa-trash-alt text-danger"></i> Monitoramento de Desperdício</h2>
+        <p class="text-muted">Acompanhe e gerencie o desperdício do seu estabelecimento</p>
+    </div>
+    <div class="col-md-4 text-right">
+        <div class="btn-group">
+            <a href="{{ url_for('desperdicio.listar_registros') }}" class="btn btn-outline-primary">
+                <i class="fas fa-list"></i> Registros
+            </a>
+            <a href="{{ url_for('desperdicio.listar_categorias') }}" class="btn btn-outline-primary">
+                <i class="fas fa-tags"></i> Categorias
+            </a>
+            <a href="{{ url_for('desperdicio.listar_metas') }}" class="btn btn-outline-primary">
+                <i class="fas fa-bullseye"></i> Metas
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card card-dashboard bg-white">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-chart-bar"></i> Resumo do Mês ({{ mes_atual }})
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 text-center mb-3">
+                        <div class="stat-value">{{ total_registros }}</div>
+                        <div class="stat-label">Ocorrências</div>
+                    </div>
+                    <div class="col-md-6 text-center mb-3">
+                        <div class="stat-value text-danger">R$ {{ "%.2f"|format(total_valor) }}</div>
+                        <div class="stat-label">Valor Total</div>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('desperdicio.registrar_desperdicio') }}" class="btn btn-primary btn-block">
+                        <i class="fas fa-plus-circle"></i> Registrar Desperdício
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-dashboard bg-white">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-tags"></i> Por Tipo de Item
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Produtos</h5>
+                        <div class="mb-2">
+                            <div class="stat-value">{{ por_tipo['Produtos']['quantidade'] }}</div>
+                            <div class="stat-label">Ocorrências</div>
+                        </div>
+                        <div class="text-danger font-weight-bold">
+                            R$ {{ "%.2f"|format(por_tipo['Produtos']['valor']) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Pratos</h5>
+                        <div class="mb-2">
+                            <div class="stat-value">{{ por_tipo['Pratos']['quantidade'] }}</div>
+                            <div class="stat-label">Ocorrências</div>
+                        </div>
+                        <div class="text-danger font-weight-bold">
+                            R$ {{ "%.2f"|format(por_tipo['Pratos']['valor']) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-dashboard bg-white">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-bullseye"></i> Metas Ativas
+            </div>
+            <div class="card-body">
+                {% if metas_ativas %}
+                    {% for meta in metas_ativas %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <div>{{ meta.nome }}</div>
+                                <div>{{ meta.progresso }}%</div>
+                            </div>
+                            <div class="progress meta-progress">
+                                <div class="progress-bar {% if meta.progresso < 50 %}bg-danger{% elif meta.progresso < 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ meta.progresso }}%" 
+                                     aria-valuenow="{{ meta.progresso }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-info-circle text-muted"></i>
+                        <p class="mb-0">Nenhuma meta ativa no momento</p>
+                        <a href="{{ url_for('desperdicio.criar_meta') }}" class="btn btn-sm btn-outline-success mt-2">
+                            Criar Meta
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card card-dashboard bg-white">
+            <div class="card-header bg-warning text-dark">
+                <i class="fas fa-chart-pie"></i> Desperdício por Categoria
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-5">
+                        <div class="chart-container">
+                            <canvas id="chartCategorias"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Categoria</th>
+                                        <th class="text-center">Ocorrências</th>
+                                        <th class="text-right">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for categoria, dados in por_categoria.items() %}
+                                    <tr>
+                                        <td>
+                                            <span class="categoria-badge" style="background-color: {{ dados.cor }}"></span>
+                                            {{ categoria }}
+                                        </td>
+                                        <td class="text-center">{{ dados.quantidade }}</td>
+                                        <td class="text-right text-danger">R$ {{ "%.2f"|format(dados.valor) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-dashboard bg-white">
+            <div class="card-header bg-secondary text-white">
+                <i class="fas fa-history"></i> Últimos Registros
+            </div>
+            <div class="card-body p-3">
+                <div class="ultimos-registros" style="max-height: 350px; overflow-y: auto;">
+                    {% if ultimos_registros %}
+                        {% for registro in ultimos_registros %}
+                            <div class="registro-item" style="border-left-color: {{ registro.categoria.cor }};">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>{{ registro.quantidade }} {{ registro.unidade }}</strong>
+                                        {% if registro.produto %}
+                                            <span class="text-muted">{{ registro.produto.nome }}</span>
+                                        {% elif registro.prato %}
+                                            <span class="text-muted">{{ registro.prato.nome }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-danger">R$ {{ "%.2f"|format(registro.valor_estimado) }}</div>
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">{{ registro.data_registro.strftime('%d/%m/%Y') }}</small>
+                                    <small class="badge badge-pill" style="background-color: {{ registro.categoria.cor }}; color: white;">
+                                        {{ registro.categoria.nome }}
+                                    </small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-info-circle text-muted"></i>
+                            <p>Nenhum registro encontrado</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('desperdicio.listar_registros') }}" class="btn btn-sm btn-outline-secondary">
+                        Ver Todos os Registros
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-dashboard bg-white">
+            <div class="card-header bg-dark text-white">
+                <i class="fas fa-tools"></i> Ferramentas de Análise
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('desperdicio.relatorios') }}" class="btn btn-outline-dark btn-block py-3 mb-3">
+                            <i class="fas fa-chart-line fa-2x mb-2"></i><br>
+                            Relatórios Avançados
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('desperdicio.exportar_registros') }}" class="btn btn-outline-dark btn-block py-3 mb-3">
+                            <i class="fas fa-file-export fa-2x mb-2"></i><br>
+                            Exportar Dados
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('desperdicio.listar_metas') }}" class="btn btn-outline-dark btn-block py-3 mb-3">
+                            <i class="fas fa-bullseye fa-2x mb-2"></i><br>
+                            Gerenciar Metas
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('desperdicio.listar_categorias') }}" class="btn btn-outline-dark btn-block py-3 mb-3">
+                            <i class="fas fa-tags fa-2x mb-2"></i><br>
+                            Gerenciar Categorias
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Dados para o gráfico de categorias
+    const dadosCategorias = {{ dados_categorias|safe }};
+    
+    // Configurar gráfico de categorias
+    const ctx = document.getElementById('chartCategorias').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: dadosCategorias.map(item => item.categoria),
+            datasets: [{
+                data: dadosCategorias.map(item => item.valor),
+                backgroundColor: dadosCategorias.map(item => item.cor),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 15
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}AleroPrice - Visualizar Cardápio{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-cardapio {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    .card-header-cardapio {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #e9ecef;
+    }
+    .badge-temporada {
+        background-color: #17a2b8;
+        color: white;
+    }
+    .badge-tipo {
+        background-color: #6c757d;
+        color: white;
+    }
+    .badge-ativo {
+        background-color: #28a745;
+        color: white;
+    }
+    .badge-inativo {
+        background-color: #dc3545;
+        color: white;
+    }
+    .secao-cardapio {
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+    }
+    .item-cardapio {
+        border-bottom: 1px solid #e9ecef;
+        padding: 10px 0;
+    }
+    .item-cardapio:last-child {
+        border-bottom: none;
+    }
+    .preco-item {
+        font-weight: bold;
+        color: #28a745;
+    }
+    .descricao-item {
+        color: #6c757d;
+        font-style: italic;
+    }
+    .btn-acao {
+        margin-right: 5px;
+    }
+    .btn-acao:last-child {
+        margin-right: 0;
+    }
+    .card-info-cardapio {
+        background-color: #e9f7fb;
+        border-left: 4px solid #17a2b8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('cardapios.index') }}">Cardápios</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ cardapio.nome }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <h1>{{ cardapio.nome }}</h1>
+            <p class="text-muted">{{ cardapio.descricao }}</p>
+            <div class="mb-3">
+                {% if cardapio.tipo %}
+                <span class="badge badge-tipo">{{ cardapio.tipo }}</span>
+                {% endif %}
+                {% if cardapio.temporada %}
+                <span class="badge badge-temporada">{{ cardapio.temporada }}</span>
+                {% endif %}
+                {% if cardapio.ativo %}
+                <span class="badge badge-ativo">Ativo</span>
+                {% else %}
+                <span class="badge badge-inativo">Inativo</span>
+                {% endif %}
+            </div>
+            <p>
+                <strong>Vigência:</strong> {{ cardapio.data_inicio.strftime('%d/%m/%Y') }} 
+                {% if cardapio.data_fim %}
+                a {{ cardapio.data_fim.strftime('%d/%m/%Y') }}
+                {% else %}
+                - Sem data de término
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-4 text-right">
+            <div class="btn-group">
+                <a href="{{ url_for('cardapios.editar', id=cardapio.id) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                <a href="{{ url_for('cardapios.imprimir', id=cardapio.id) }}" class="btn btn-outline-info" target="_blank">
+                    <i class="fas fa-print"></i> Imprimir
+                </a>
+                <a href="{{ url_for('cardapios.exportar', id=cardapio.id) }}" class="btn btn-outline-success">
+                    <i class="fas fa-file-export"></i> Exportar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card card-info-cardapio mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5><i class="fas fa-info-circle"></i> Gerenciamento de Seções e Itens</h5>
+                            <p class="mb-0">Adicione seções ao cardápio (como Entradas, Pratos Principais, Sobremesas) e depois itens em cada seção.</p>
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <a href="{{ url_for('cardapios.adicionar_secao', id=cardapio.id) }}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Adicionar Seção
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if secoes %}
+        {% for secao in secoes %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="secao-cardapio">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="mb-0">{{ secao.nome }}</h4>
+                            {% if secao.descricao %}
+                            <p class="text-muted mb-0">{{ secao.descricao }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <a href="{{ url_for('cardapios.adicionar_item', secao_id=secao.id) }}" class="btn btn-sm btn-success btn-acao">
+                                <i class="fas fa-plus"></i> Item
+                            </a>
+                            <a href="{{ url_for('cardapios.editar_secao', id=secao.id) }}" class="btn btn-sm btn-info btn-acao">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('cardapios.remover_secao', id=secao.id) }}" class="btn btn-sm btn-danger btn-acao" onclick="return confirm('Tem certeza que deseja remover esta seção e todos os seus itens?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        {% if secao.itens %}
+                            {% for item in secao.itens %}
+                            <div class="item-cardapio">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h5 class="mb-1">{{ item.prato.nome }}</h5>
+                                        {% if item.prato.descricao %}
+                                        <p class="descricao-item mb-0">{{ item.prato.descricao }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-2 text-right">
+                                        <span class="preco-item">R$ {{ "%.2f"|format(item.get_preco_venda) }}</span>
+                                    </div>
+                                    <div class="col-md-2 text-right">
+                                        <a href="{{ url_for('cardapios.editar_item', id=item.id) }}" class="btn btn-sm btn-outline-info btn-acao">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('cardapios.remover_item', id=item.id) }}" class="btn btn-sm btn-outline-danger btn-acao" onclick="return confirm('Tem certeza que deseja remover este item?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-3">
+                                <p class="text-muted mb-0">Nenhum item adicionado nesta seção.</p>
+                                <a href="{{ url_for('cardapios.adicionar_item', secao_id=secao.id) }}" class="btn btn-sm btn-outline-success mt-2">
+                                    <i class="fas fa-plus"></i> Adicionar Item
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Este cardápio ainda não possui seções. Adicione seções para organizar os itens do cardápio.
+                </div>
+                <div class="text-center">
+                    <a href="{{ url_for('cardapios.adicionar_secao', id=cardapio.id) }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Adicionar Primeira Seção
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

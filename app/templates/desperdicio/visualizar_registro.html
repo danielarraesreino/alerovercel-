@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Detalhes do Registro de Desperdício</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card-dashboard {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-dashboard .card-header {
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+        }
+        .detail-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .detail-header {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #6c757d;
+        }
+        .detail-value {
+            font-size: 1.1rem;
+        }
+        .categoria-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .item-icon {
+            font-size: 2.5rem;
+            margin-right: 15px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.index') }}">Desperdício</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.listar_registros') }}">Registros</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Detalhes do Registro</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="detail-container">
+                    <div class="detail-header d-flex justify-content-between align-items-center">
+                        <h2>
+                            <i class="fas fa-clipboard-list text-primary"></i> Detalhes do Registro
+                        </h2>
+                        <div>
+                            <a href="{{ url_for('desperdicio.listar_registros') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="categoria-badge" style="background-color: {{ registro.categoria.cor }}">
+                        <i class="fas fa-tag"></i> {{ registro.categoria.nome }}
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-2 text-center">
+                            {% if registro.produto %}
+                                <i class="fas fa-box item-icon"></i>
+                            {% elif registro.prato %}
+                                <i class="fas fa-utensils item-icon"></i>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-10">
+                            <h3>
+                                {% if registro.produto %}
+                                    {{ registro.produto.nome }}
+                                {% elif registro.prato %}
+                                    {{ registro.prato.nome }}
+                                {% endif %}
+                            </h3>
+                            <div class="text-muted">
+                                {% if registro.produto %}
+                                    <span class="badge badge-pill badge-secondary">Produto</span>
+                                {% elif registro.prato %}
+                                    <span class="badge badge-pill badge-secondary">Prato</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="detail-label">Quantidade</div>
+                                <div class="detail-value">{{ registro.quantidade }} {{ registro.unidade }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="detail-label">Valor Estimado</div>
+                                <div class="detail-value text-danger">R$ {{ "%.2f"|format(registro.valor_estimado) }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="detail-label">Data do Registro</div>
+                                <div class="detail-value">{{ registro.data_registro.strftime('%d/%m/%Y') }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="detail-label">Registrado por</div>
+                                <div class="detail-value">
+                                    {% if registro.usuario %}
+                                        {{ registro.usuario.nome }}
+                                    {% else %}
+                                        Sistema
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if registro.observacao %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <div class="detail-label">Observação</div>
+                                    <div class="detail-value">
+                                        <div class="p-3 bg-white rounded border">
+                                            {{ registro.observacao }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="row mt-5">
+                        <div class="col-12">
+                            <div class="card card-dashboard">
+                                <div class="card-header bg-light">
+                                    <i class="fas fa-info-circle"></i> Informações Adicionais
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5>Sobre a Categoria</h5>
+                                            <p>{{ registro.categoria.descricao or 'Sem descrição disponível.' }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5>Recomendações</h5>
+                                            <p>Analise as causas deste desperdício e considere implementar medidas para evitar ocorrências semelhantes no futuro.</p>
+                                            <a href="{{ url_for('desperdicio.relatorios') }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-chart-line"></i> Ver Relatórios
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

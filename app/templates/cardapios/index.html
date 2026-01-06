@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}AleroPrice - Cardápios{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-cardapio {
+        transition: transform 0.3s;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .card-cardapio:hover {
+        transform: translateY(-5px);
+    }
+    .badge-temporada {
+        background-color: #17a2b8;
+        color: white;
+    }
+    .badge-tipo {
+        background-color: #6c757d;
+        color: white;
+    }
+    .badge-ativo {
+        background-color: #28a745;
+        color: white;
+    }
+    .badge-inativo {
+        background-color: #dc3545;
+        color: white;
+    }
+    .filtros-container {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h1>Gerenciamento de Cardápios</h1>
+        <p class="text-muted">Crie, edite e gerencie os cardápios do seu estabelecimento</p>
+    </div>
+    <div class="col-md-4 text-right">
+        <a href="{{ url_for('cardapios.criar') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Novo Cardápio
+        </a>
+        <a href="{{ url_for('cardapios.sugestao') }}" class="btn btn-info ms-2">
+            <i class="fas fa-magic"></i> Sugestão
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="filtros-container">
+    <form method="get" action="{{ url_for('cardapios.index') }}">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="tipo">Tipo:</label>
+                    <select name="tipo" id="tipo" class="form-control">
+                        <option value="">Todos</option>
+                        {% for t in tipos %}
+                        <option value="{{ t }}" {% if request.args.get('tipo') == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="temporada">Temporada:</label>
+                    <select name="temporada" id="temporada" class="form-control">
+                        <option value="">Todas</option>
+                        {% for t in temporadas %}
+                        <option value="{{ t }}" {% if request.args.get('temporada') == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="ativos">Status:</label>
+                    <select name="ativos" id="ativos" class="form-control">
+                        <option value="true" {% if request.args.get('ativos', 'true') == 'true' %}selected{% endif %}>Ativos</option>
+                        <option value="false" {% if request.args.get('ativos') == 'false' %}selected{% endif %}>Inativos</option>
+                        <option value="" {% if request.args.get('ativos') == '' %}selected{% endif %}>Todos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary mb-3 w-100">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Lista de Cardápios -->
+<div class="row">
+    {% for cardapio in cardapios.items %}
+    <div class="col-md-4">
+        <div class="card card-cardapio">
+            <div class="card-body">
+                <h5 class="card-title">{{ cardapio.nome }}</h5>
+                <p class="card-text">{{ cardapio.descricao|truncate(100) }}</p>
+                <div class="mb-3">
+                    {% if cardapio.tipo %}
+                    <span class="badge badge-tipo">{{ cardapio.tipo }}</span>
+                    {% endif %}
+                    {% if cardapio.temporada %}
+                    <span class="badge badge-temporada">{{ cardapio.temporada }}</span>
+                    {% endif %}
+                    {% if cardapio.ativo %}
+                    <span class="badge badge-ativo">Ativo</span>
+                    {% else %}
+                    <span class="badge badge-inativo">Inativo</span>
+                    {% endif %}
+                </div>
+                <p class="card-text">
+                    <small class="text-muted">
+                        Vigência: {{ cardapio.data_inicio.strftime('%d/%m/%Y') }} 
+                        {% if cardapio.data_fim %}
+                        a {{ cardapio.data_fim.strftime('%d/%m/%Y') }}
+                        {% else %}
+                        - Sem data de término
+                        {% endif %}
+                    </small>
+                </p>
+                <div class="btn-group w-100">
+                    <a href="{{ url_for('cardapios.visualizar', id=cardapio.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> Visualizar
+                    </a>
+                    <a href="{{ url_for('cardapios.editar', id=cardapio.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{{ url_for('cardapios.imprimir', id=cardapio.id) }}" class="btn btn-sm btn-outline-info" target="_blank">
+                        <i class="fas fa-print"></i> Imprimir
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            Nenhum cardápio encontrado. <a href="{{ url_for('cardapios.criar') }}">Crie um novo cardápio</a>.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Paginação -->
+{% if cardapios.pages > 1 %}
+<nav aria-label="Navegação de páginas">
+    <ul class="pagination justify-content-center mt-4">
+        {% if cardapios.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('cardapios.index', page=cardapios.prev_num, tipo=request.args.get('tipo', ''), temporada=request.args.get('temporada', ''), ativos=request.args.get('ativos', 'true')) }}">
+                Anterior
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">Anterior</span>
+        </li>
+        {% endif %}
+
+        {% for page_num in cardapios.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+            {% if page_num %}
+                {% if page_num == cardapios.page %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('cardapios.index', page=page_num, tipo=request.args.get('tipo', ''), temporada=request.args.get('temporada', ''), ativos=request.args.get('ativos', 'true')) }}">
+                        {{ page_num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if cardapios.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('cardapios.index', page=cardapios.next_num, tipo=request.args.get('tipo', ''), temporada=request.args.get('temporada', ''), ativos=request.args.get('ativos', 'true')) }}">
+                Próxima
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">Próxima</span>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Adicionar Item ao Cardápio</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .card-pratos {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .prato-item {
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        .prato-item:hover {
+            background-color: #e9ecef;
+        }
+        .prato-item.selected {
+            background-color: #cfe2ff;
+            border: 1px solid #b8daff;
+        }
+        .prato-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('cardapios.index') }}">Cardápios</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('cardapios.visualizar', id=secao.cardapio.id) }}">{{ secao.cardapio.nome }}</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Adicionar Item</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="form-container">
+                    <h2 class="form-title">Adicionar Item ao Cardápio</h2>
+                    <p class="text-muted">Cardápio: <strong>{{ secao.cardapio.nome }}</strong> | Seção: <strong>{{ secao.nome }}</strong></p>
+
+                    <ul class="nav nav-tabs" id="itemTypeTab" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="prato-tab" data-toggle="tab" href="#prato" role="tab" aria-controls="prato" aria-selected="true">Selecionar Prato Existente</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="manual-tab" data-toggle="tab" href="#manual" role="tab" aria-controls="manual" aria-selected="false">Adicionar Item Manual</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content pt-4" id="itemTypeTabContent">
+                        <!-- Tab para selecionar prato existente -->
+                        <div class="tab-pane fade show active" id="prato" role="tabpanel" aria-labelledby="prato-tab">
+                            <form method="post" action="{{ url_for('cardapios.adicionar_item', secao_id=secao.id) }}" id="form-prato">
+                                <input type="hidden" name="tipo_adicao" value="prato">
+                                
+                                <div class="form-group">
+                                    <label for="prato_busca">Buscar Prato:</label>
+                                    <input type="text" class="form-control" id="prato_busca" placeholder="Digite para filtrar pratos...">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Selecione um Prato:</label>
+                                    <input type="hidden" name="prato_id" id="prato_id_selected" required>
+                                    <div class="card card-pratos">
+                                        <div class="card-body p-0">
+                                            <div class="list-group list-group-flush" id="lista-pratos">
+                                                {% for prato in pratos %}
+                                                <div class="prato-item" data-id="{{ prato.id }}" data-preco="{{ prato.preco_venda }}" data-nome="{{ prato.nome }}">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <h6 class="mb-1">{{ prato.nome }}</h6>
+                                                            <p class="prato-info mb-0">{{ prato.descricao|truncate(60) }}</p>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <span class="badge badge-primary">R$ {{ "%.2f"|format(prato.preco_venda) }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="preco">Preço no Cardápio:</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">R$</span>
+                                        </div>
+                                        <input type="number" class="form-control" id="preco_prato" name="preco" step="0.01" min="0" required>
+                                    </div>
+                                    <small class="form-text text-muted">O preço pode ser diferente do cadastrado no prato.</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="descricao">Descrição no Cardápio (opcional):</label>
+                                    <textarea class="form-control" id="descricao_prato" name="descricao" rows="2"></textarea>
+                                    <small class="form-text text-muted">Deixe em branco para usar a descrição original do prato.</small>
+                                </div>
+
+                                <div class="form-group text-right mt-4">
+                                    <a href="{{ url_for('cardapios.visualizar', id=secao.cardapio.id) }}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </a>
+                                    <button type="submit" name="adicionar_mais" class="btn btn-outline-primary">
+                                        <i class="fas fa-save"></i> Salvar e Adicionar Outro
+                                    </button>
+                                    <button type="submit" name="finalizar" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Salvar e Finalizar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Tab para adicionar item manual -->
+                        <div class="tab-pane fade" id="manual" role="tabpanel" aria-labelledby="manual-tab">
+                            <form method="post" action="{{ url_for('cardapios.adicionar_item', secao_id=secao.id) }}" id="form-manual">
+                                <input type="hidden" name="tipo_adicao" value="manual">
+                                
+                                <div class="form-group">
+                                    <label for="nome_manual">Nome do Item *</label>
+                                    <input type="text" class="form-control" id="nome_manual" name="nome" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="descricao_manual">Descrição</label>
+                                    <textarea class="form-control" id="descricao_manual" name="descricao" rows="2"></textarea>
+                                    <small class="form-text text-muted">Uma breve descrição do item (opcional).</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="preco_manual">Preço *</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">R$</span>
+                                        </div>
+                                        <input type="number" class="form-control" id="preco_manual" name="preco" step="0.01" min="0" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group text-right mt-4">
+                                    <a href="{{ url_for('cardapios.visualizar', id=secao.cardapio.id) }}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </a>
+                                    <button type="submit" name="adicionar_mais" class="btn btn-outline-primary">
+                                        <i class="fas fa-save"></i> Salvar e Adicionar Outro
+                                    </button>
+                                    <button type="submit" name="finalizar" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Salvar e Finalizar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Filtrar pratos ao digitar na busca
+            $('#prato_busca').on('keyup', function() {
+                var value = $(this).val().toLowerCase();
+                $('#lista-pratos .prato-item').filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+            
+            // Selecionar prato ao clicar
+            $('.prato-item').on('click', function() {
+                $('.prato-item').removeClass('selected');
+                $(this).addClass('selected');
+                var pratoId = $(this).data('id');
+                var pratoPreco = $(this).data('preco');
+                $('#prato_id_selected').val(pratoId);
+                $('#preco_prato').val(pratoPreco);
+            });
+        });
+    </script>
+</body>
+</html>

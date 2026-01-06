@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Análise de Rentabilidade</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card-dashboard {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-dashboard .card-header {
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+        }
+        .filter-container {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #6c757d;
+        }
+        .rentabilidade-alta {
+            color: #28a745;
+        }
+        .rentabilidade-media {
+            color: #ffc107;
+        }
+        .rentabilidade-baixa {
+            color: #dc3545;
+        }
+        .item-card {
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        .item-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('cardapios.index') }}">Cardápios</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Análise de Rentabilidade</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2><i class="fas fa-chart-line text-primary"></i> Análise de Rentabilidade</h2>
+                <p class="text-muted">Análise detalhada da rentabilidade dos itens dos cardápios</p>
+            </div>
+            <div class="col-md-4 text-right">
+                <a href="{{ url_for('cardapios.sugestao') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-lightbulb"></i> Sugestões de Otimização
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="filter-container">
+                    <form method="get" action="{{ url_for('cardapios.analise_rentabilidade') }}">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="cardapio_id">Cardápio</label>
+                                    <select class="form-control" id="cardapio_id" name="cardapio_id">
+                                        <option value="">Todos os cardápios</option>
+                                        {% for cardapio in cardapios %}
+                                            <option value="{{ cardapio.id }}" {% if cardapio_id == cardapio.id %}selected{% endif %}>
+                                                {{ cardapio.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="secao_id">Seção</label>
+                                    <select class="form-control" id="secao_id" name="secao_id">
+                                        <option value="">Todas as seções</option>
+                                        {% for secao in secoes %}
+                                            <option value="{{ secao.id }}" {% if secao_id == secao.id %}selected{% endif %}>
+                                                {{ secao.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="rentabilidade">Rentabilidade</label>
+                                    <select class="form-control" id="rentabilidade" name="rentabilidade">
+                                        <option value="">Todos os níveis</option>
+                                        <option value="alta" {% if rentabilidade == 'alta' %}selected{% endif %}>Alta (>30%)</option>
+                                        <option value="media" {% if rentabilidade == 'media' %}selected{% endif %}>Média (15-30%)</option>
+                                        <option value="baixa" {% if rentabilidade == 'baixa' %}selected{% endif %}>Baixa (<15%)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 text-right">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-filter"></i> Aplicar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card bg-white">
+                    <div class="stat-icon text-primary">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <div class="stat-value">{{ total_itens }}</div>
+                    <div class="stat-label">Total de Itens</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-white">
+                    <div class="stat-icon text-success">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-value">{{ "%.1f"|format(margem_media) }}%</div>
+                    <div class="stat-label">Margem Média</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-white">
+                    <div class="stat-icon text-warning">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-value">R$ {{ "%.2f"|format(ticket_medio) }}</div>
+                    <div class="stat-label">Ticket Médio</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-white">
+                    <div class="stat-icon text-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-value">{{ itens_baixa_rentabilidade }}</div>
+                    <div class="stat-label">Itens com Baixa Rentabilidade</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-chart-bar"></i> Distribuição de Rentabilidade
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartRentabilidade"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-percentage"></i> Margens por Seção
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartSecoes"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-list"></i> Itens do Cardápio
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-light" id="btn-ordenar-margem">
+                                <i class="fas fa-sort-amount-down"></i> Ordenar por Margem
+                            </button>
+                            <button class="btn btn-sm btn-outline-light ml-2" id="btn-ordenar-preco">
+                                <i class="fas fa-sort-amount-down"></i> Ordenar por Preço
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="lista-itens">
+                            {% for item in itens %}
+                            <div class="col-md-6 item-card-container" 
+                                 data-margem="{{ item.margem }}" 
+                                 data-preco="{{ item.preco_venda }}">
+                                <div class="item-card p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="mb-0">{{ item.prato.nome }}</h5>
+                                        <span class="badge badge-pill badge-{{ 'success' if item.margem > 30 else 'warning' if item.margem > 15 else 'danger' }}">
+                                            {{ "%.1f"|format(item.margem) }}% margem
+                                        </span>
+                                    </div>
+                                    <div class="text-muted small mb-2">{{ item.secao }}</div>
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <span class="font-weight-bold">Preço:</span> R$ {{ "%.2f"|format(item.preco_venda) }}
+                                        </div>
+                                        <div>
+                                            <span class="font-weight-bold">Custo:</span> R$ {{ "%.2f"|format(item.custo) }}
+                                        </div>
+                                    </div>
+                                    <div class="progress mt-2" style="height: 5px;">
+                                        <div class="progress-bar bg-{{ 'success' if item.margem > 30 else 'warning' if item.margem > 15 else 'danger' }}" 
+                                             role="progressbar" 
+                                             style="width: {{ item.margem if item.margem <= 100 else 100 }}%" 
+                                             aria-valuenow="{{ item.margem }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    {% if item.margem < 15 %}
+                                    <div class="mt-2 small text-danger">
+                                        <i class="fas fa-exclamation-circle"></i> Rentabilidade abaixo do ideal
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-lightbulb"></i> Recomendações para Otimização
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for recomendacao in recomendacoes %}
+                            <div class="col-md-4 mb-3">
+                                <div class="alert alert-{{ recomendacao.tipo }} mb-0 h-100">
+                                    <h5><i class="{{ recomendacao.icone }} mr-2"></i> {{ recomendacao.titulo }}</h5>
+                                    <p class="mb-0">{{ recomendacao.descricao }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Dados para os gráficos
+        const dadosRentabilidade = {{ dados_rentabilidade|safe }};
+        const dadosSecoes = {{ dados_secoes|safe }};
+        
+        // Configurar gráfico de distribuição de rentabilidade
+        const ctxRentabilidade = document.getElementById('chartRentabilidade').getContext('2d');
+        new Chart(ctxRentabilidade, {
+            type: 'bar',
+            data: {
+                labels: ['Baixa (<15%)', 'Média (15-30%)', 'Alta (>30%)'],
+                datasets: [{
+                    label: 'Número de Itens',
+                    data: dadosRentabilidade,
+                    backgroundColor: [
+                        '#dc3545',
+                        '#ffc107',
+                        '#28a745'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Número de Itens'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Configurar gráfico de margens por seção
+        const ctxSecoes = document.getElementById('chartSecoes').getContext('2d');
+        new Chart(ctxSecoes, {
+            type: 'doughnut',
+            data: {
+                labels: dadosSecoes.map(s => s.nome),
+                datasets: [{
+                    data: dadosSecoes.map(s => s.margem),
+                    backgroundColor: [
+                        '#007bff',
+                        '#28a745',
+                        '#ffc107',
+                        '#17a2b8',
+                        '#6f42c1',
+                        '#fd7e14',
+                        '#20c997',
+                        '#e83e8c'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.raw + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Ordenação dos itens
+        document.getElementById('btn-ordenar-margem').addEventListener('click', function() {
+            ordenarItens('margem');
+        });
+        
+        document.getElementById('btn-ordenar-preco').addEventListener('click', function() {
+            ordenarItens('preco');
+        });
+        
+        function ordenarItens(criterio) {
+            const container = document.getElementById('lista-itens');
+            const itens = Array.from(container.getElementsByClassName('item-card-container'));
+            
+            itens.sort(function(a, b) {
+                const valorA = parseFloat(a.dataset[criterio]);
+                const valorB = parseFloat(b.dataset[criterio]);
+                return valorB - valorA; // Ordem decrescente
+            });
+            
+            itens.forEach(function(item) {
+                container.appendChild(item);
+            });
+        }
+    </script>
+</body>
+</html>

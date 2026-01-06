@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Editar Categoria de Desperdício</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-colorpicker@3.2.0/dist/css/bootstrap-colorpicker.min.css">
+    <style>
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .color-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+            border: 1px solid #ced4da;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.index') }}">Desperdício</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.listar_categorias') }}">Categorias</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Editar Categoria</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="form-container">
+                    <h2 class="form-title">Editar Categoria de Desperdício</h2>
+                    <p class="text-muted">Atualize as informações da categoria</p>
+
+                    <form method="post" action="{{ url_for('desperdicio.editar_categoria', id=categoria.id) }}">
+                        <div class="form-group">
+                            <label for="nome">Nome da Categoria *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" value="{{ categoria.nome }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descricao">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="3">{{ categoria.descricao }}</textarea>
+                            <small class="form-text text-muted">Uma breve descrição desta categoria (opcional)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cor">Cor</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"><div id="color-preview" class="color-preview"></div></span>
+                                </div>
+                                <input type="text" class="form-control" id="cor" name="cor" value="{{ categoria.cor }}">
+                            </div>
+                            <small class="form-text text-muted">Escolha uma cor para identificar visualmente esta categoria</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Cores Sugeridas</label>
+                            <div class="d-flex flex-wrap">
+                                <div class="color-option m-1" data-color="#dc3545" style="background-color: #dc3545; width: 30px; height: 30px; border-radius: 5px; cursor: pointer;"></div>
+                                <div class="color-option m-1" data-color="#fd7e14" style="background-color: #fd7e14; width: 30px; height: 30px; border-radius: 5px; cursor: pointer;"></div>
+                                <div class="color-option m-1" data-color="#ffc107" style="background-color: #ffc107; width: 30px; height: 30px; border-radius: 5px; cursor: pointer;"></div>
+                                <div class="color-option m-1" data-color="#28a745" style="background-color: #28a745; width: 30px; height: 30px; border-radius: 5px; cursor: pointer;"></div>
+                                <div class="color-option m-1" data-color="#20c997" style="background-color: #20c997; width: 30px; height: 30px; border-radius: 5px; cursor: pointer;"></div>
+                                <div class="color-option m-1" data-color="#17a2b8" style="background-color: #17a2b8; width: 30px; height: 30px; border-radius: 5px; cursor: pointer;"></div>
+                                <div class="color-option m-1" data-color="#007bff" style="background-color: #007bff; width: 30px; height: 30px; border-radius: 5px; cursor: pointer;"></div>
+                                <div class="color-option m-1" data-color="#6f42c1" style="background-color: #6f42c1; width: 30px; height: 30px; border-radius: 5px; cursor: pointer;"></div>
+                                <div class="color-option m-1" data-color="#e83e8c" style="background-color: #e83e8c; width: 30px; height: 30px; border-radius: 5px; cursor: pointer;"></div>
+                                <div class="color-option m-1" data-color="#6c757d" style="background-color: #6c757d; width: 30px; height: 30px; border-radius: 5px; cursor: pointer;"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="ativo" name="ativo" {% if categoria.ativo %}checked{% endif %}>
+                                <label class="custom-control-label" for="ativo">Categoria Ativa</label>
+                            </div>
+                            <small class="form-text text-muted">Desative para ocultar esta categoria ao registrar novos desperdícios</small>
+                        </div>
+
+                        <div class="form-group text-right mt-4">
+                            <a href="{{ url_for('desperdicio.listar_categorias') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-colorpicker@3.2.0/dist/js/bootstrap-colorpicker.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Inicializar o color picker
+            $('#cor').colorpicker();
+            
+            // Atualizar preview quando o valor mudar
+            $('#cor').on('change', function() {
+                $('#color-preview').css('background-color', $(this).val());
+            });
+            
+            // Inicializar o preview
+            $('#color-preview').css('background-color', $('#cor').val());
+            
+            // Selecionar cor sugerida
+            $('.color-option').click(function() {
+                var color = $(this).data('color');
+                $('#cor').val(color).trigger('change');
+            });
+        });
+    </script>
+</body>
+</html>

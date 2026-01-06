@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Detalhes da Meta de Redução</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card-dashboard {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-dashboard .card-header {
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+        }
+        .detail-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .detail-header {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #6c757d;
+        }
+        .detail-value {
+            font-size: 1.1rem;
+        }
+        .categoria-badge {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .meta-progress {
+            height: 20px;
+            border-radius: 10px;
+        }
+        .meta-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.index') }}">Desperdício</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.listar_metas') }}">Metas</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Detalhes da Meta</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <div class="detail-container">
+                    <div class="detail-header d-flex justify-content-between align-items-center">
+                        <h2>
+                            <i class="fas fa-bullseye text-primary"></i> {{ meta.nome }}
+                        </h2>
+                        <div>
+                            <a href="{{ url_for('desperdicio.editar_meta', id=meta.id) }}" class="btn btn-outline-primary mr-2">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <a href="{{ url_for('desperdicio.listar_metas') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="meta-badge bg-{{ 'success' if meta.progresso >= 80 else 'warning' if meta.progresso >= 50 else 'danger' }}">
+                                {% if meta.tipo == 'valor' %}
+                                    <i class="fas fa-dollar-sign mr-2"></i> Meta de Valor
+                                {% elif meta.tipo == 'quantidade' %}
+                                    <i class="fas fa-balance-scale mr-2"></i> Meta de Quantidade
+                                {% elif meta.tipo == 'percentual' %}
+                                    <i class="fas fa-percentage mr-2"></i> Meta Percentual
+                                {% endif %}
+                            </div>
+                            
+                            {% if meta.descricao %}
+                                <p>{{ meta.descricao }}</p>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <div class="detail-label">Período</div>
+                                <div class="detail-value">
+                                    {{ meta.data_inicio.strftime('%d/%m/%Y') }} a {{ meta.data_fim.strftime('%d/%m/%Y') }}
+                                    <small class="text-muted ml-2">
+                                        ({{ (meta.data_fim - meta.data_inicio).days + 1 }} dias)
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="detail-label">Categoria</div>
+                                <div class="detail-value">
+                                    {% if meta.categoria_id %}
+                                        <span class="categoria-badge" style="background-color: {{ meta.categoria.cor }}"></span>
+                                        {{ meta.categoria.nome }}
+                                    {% else %}
+                                        <span class="text-muted">Todas as categorias</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="detail-label">Status</div>
+                                <div class="detail-value">
+                                    {% if meta.ativo %}
+                                        <span class="badge badge-success">Ativa</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">Inativa</span>
+                                    {% endif %}
+                                    
+                                    {% if hoje > meta.data_fim %}
+                                        <span class="badge badge-info ml-2">Concluída</span>
+                                    {% elif hoje < meta.data_inicio %}
+                                        <span class="badge badge-warning ml-2">Não iniciada</span>
+                                    {% else %}
+                                        <span class="badge badge-primary ml-2">Em andamento</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <div class="stat-label">Progresso</div>
+                                <div class="stat-value text-{{ 'success' if meta.progresso >= 80 else 'warning' if meta.progresso >= 50 else 'danger' }}">
+                                    {{ meta.progresso }}%
+                                </div>
+                                <div class="progress meta-progress">
+                                    <div class="progress-bar bg-{{ 'success' if meta.progresso >= 80 else 'warning' if meta.progresso >= 50 else 'danger' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ meta.progresso }}%" 
+                                         aria-valuenow="{{ meta.progresso }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-label">
+                                    {% if meta.tipo == 'valor' %}
+                                        Meta de Redução
+                                    {% elif meta.tipo == 'quantidade' %}
+                                        Ocorrências a Reduzir
+                                    {% elif meta.tipo == 'percentual' %}
+                                        Percentual a Reduzir
+                                    {% endif %}
+                                </div>
+                                <div class="stat-value">
+                                    {% if meta.tipo == 'valor' %}
+                                        R$ {{ "%.2f"|format(meta.valor_meta) }}
+                                    {% elif meta.tipo == 'quantidade' %}
+                                        {{ meta.valor_meta }}
+                                    {% elif meta.tipo == 'percentual' %}
+                                        {{ meta.valor_meta }}%
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card card-dashboard">
+                                <div class="card-header bg-primary text-white">
+                                    <i class="fas fa-chart-line"></i> Evolução da Meta
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="chartEvolucao"></canvas>
+                                    </div>
+                                    
+                                    <div class="table-responsive mt-4">
+                                        <table class="table table-sm table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Data</th>
+                                                    <th class="text-center">Ocorrências</th>
+                                                    <th class="text-right">Valor</th>
+                                                    <th class="text-right">Progresso</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for registro in historico %}
+                                                <tr>
+                                                    <td>{{ registro.data.strftime('%d/%m/%Y') }}</td>
+                                                    <td class="text-center">{{ registro.quantidade }}</td>
+                                                    <td class="text-right">R$ {{ "%.2f"|format(registro.valor) }}</td>
+                                                    <td class="text-right">{{ registro.progresso }}%</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card card-dashboard">
+                                <div class="card-header bg-info text-white">
+                                    <i class="fas fa-info-circle"></i> Detalhes da Meta
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <div class="detail-label">Valor de Referência</div>
+                                        <div class="detail-value">
+                                            {% if meta.tipo == 'valor' or meta.tipo == 'percentual' %}
+                                                R$ {{ "%.2f"|format(meta.valor_referencia) }}
+                                            {% elif meta.tipo == 'quantidade' %}
+                                                {{ meta.valor_referencia }} ocorrências
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="detail-label">Valor Atual</div>
+                                        <div class="detail-value">
+                                            {% if meta.tipo == 'valor' %}
+                                                R$ {{ "%.2f"|format(meta.valor_atual) }}
+                                            {% elif meta.tipo == 'quantidade' %}
+                                                {{ meta.valor_atual }} ocorrências
+                                            {% elif meta.tipo == 'percentual' %}
+                                                {{ meta.valor_atual }}%
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="detail-label">Dias Restantes</div>
+                                        <div class="detail-value">
+                                            {% if hoje > meta.data_fim %}
+                                                <span class="text-muted">Meta finalizada</span>
+                                            {% elif hoje < meta.data_inicio %}
+                                                <span class="text-muted">Meta não iniciada</span>
+                                            {% else %}
+                                                {{ (meta.data_fim - hoje).days }} dias
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card card-dashboard">
+                                <div class="card-header bg-success text-white">
+                                    <i class="fas fa-lightbulb"></i> Recomendações
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled">
+                                        {% if meta.progresso < 50 %}
+                                            <li class="mb-3">
+                                                <i class="fas fa-exclamation-triangle text-warning mr-2"></i>
+                                                O progresso da meta está abaixo do esperado. Considere intensificar as ações de redução de desperdício.
+                                            </li>
+                                        {% endif %}
+                                        
+                                        <li class="mb-3">
+                                            <i class="fas fa-chart-pie text-primary mr-2"></i>
+                                            Analise os registros de desperdício para identificar padrões e causas principais.
+                                        </li>
+                                        
+                                        <li class="mb-3">
+                                            <i class="fas fa-users text-info mr-2"></i>
+                                            Compartilhe o progresso da meta com a equipe para aumentar o engajamento.
+                                        </li>
+                                        
+                                        <li class="mb-3">
+                                            <i class="fas fa-clipboard-check text-success mr-2"></i>
+                                            Implemente checklist de verificação para prevenir desperdícios comuns.
+                                        </li>
+                                        
+                                        <li>
+                                            <i class="fas fa-sync-alt text-primary mr-2"></i>
+                                            Revise periodicamente a meta para garantir que continua realista e desafiadora.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Dados para o gráfico de evolução
+        const dadosEvolucao = {{ dados_evolucao|safe }};
+        
+        // Configurar gráfico de evolução
+        const ctx = document.getElementById('chartEvolucao').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dadosEvolucao.datas,
+                datasets: [{
+                    label: 'Progresso (%)',
+                    data: dadosEvolucao.progresso,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                },
+                {% if meta.tipo == 'valor' or meta.tipo == 'percentual' %}
+                {
+                    label: 'Valor (R$)',
+                    data: dadosEvolucao.valores,
+                    borderColor: '#dc3545',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }
+                {% elif meta.tipo == 'quantidade' %}
+                {
+                    label: 'Ocorrências',
+                    data: dadosEvolucao.quantidades,
+                    borderColor: '#dc3545',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }
+                {% endif %}
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Progresso (%)'
+                        }
+                    },
+                    y1: {
+                        position: 'right',
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: {% if meta.tipo == 'valor' or meta.tipo == 'percentual' %}'Valor (R$)'{% elif meta.tipo == 'quantidade' %}'Ocorrências'{% endif %}
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

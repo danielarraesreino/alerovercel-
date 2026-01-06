@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Planejamento de Compras</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card-dashboard {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-dashboard .card-header {
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .badge-urgente {
+            background-color: #dc3545;
+            color: white;
+        }
+        .badge-planejado {
+            background-color: #28a745;
+            color: white;
+        }
+        .badge-pendente {
+            background-color: #ffc107;
+            color: black;
+        }
+        .item-card {
+            transition: transform 0.3s;
+        }
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .preco-baixo {
+            color: #28a745;
+        }
+        .preco-alto {
+            color: #dc3545;
+        }
+        .preco-medio {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('cardapios.index') }}">Cardápios</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Planejamento de Compras</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="fas fa-shopping-cart text-primary"></i> Planejamento de Compras</h2>
+                <p class="text-muted">Otimize suas compras com base nos itens do cardápio e nas previsões de demanda</p>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-filter"></i> Filtros
+                    </div>
+                    <div class="card-body">
+                        <form method="get" action="{{ url_for('cardapios.planejamento_compras') }}">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="cardapio_id">Cardápio</label>
+                                        <select class="form-control" id="cardapio_id" name="cardapio_id">
+                                            <option value="">Todos os cardápios</option>
+                                            {% for cardapio in cardapios %}
+                                                <option value="{{ cardapio.id }}" {% if cardapio_id == cardapio.id %}selected{% endif %}>
+                                                    {{ cardapio.nome }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="periodo">Período de Planejamento</label>
+                                        <select class="form-control" id="periodo" name="periodo">
+                                            <option value="7" {% if periodo == 7 %}selected{% endif %}>Próximos 7 dias</option>
+                                            <option value="14" {% if periodo == 14 %}selected{% endif %}>Próximos 14 dias</option>
+                                            <option value="30" {% if periodo == 30 %}selected{% endif %}>Próximos 30 dias</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="categoria_id">Categoria de Ingrediente</label>
+                                        <select class="form-control" id="categoria_id" name="categoria_id">
+                                            <option value="">Todas as categorias</option>
+                                            {% for categoria in categorias %}
+                                                <option value="{{ categoria.id }}" {% if categoria_id == categoria.id %}selected{% endif %}>
+                                                    {{ categoria.nome }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="ordenar_por">Ordenar por</label>
+                                        <select class="form-control" id="ordenar_por" name="ordenar_por">
+                                            <option value="quantidade" {% if ordenar_por == 'quantidade' %}selected{% endif %}>Maior quantidade</option>
+                                            <option value="valor" {% if ordenar_por == 'valor' %}selected{% endif %}>Maior valor</option>
+                                            <option value="urgencia" {% if ordenar_por == 'urgencia' %}selected{% endif %}>Urgência</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 text-center">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Filtrar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-chart-pie"></i> Distribuição por Categoria
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartDistribuicao"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-chart-bar"></i> Top 10 Ingredientes (Valor)
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartTopIngredientes"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="fas fa-chart-line"></i> Previsão de Gastos
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartPrevisaoGastos"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fas fa-list"></i> Lista de Compras Sugerida
+                    </div>
+                    <div class="card-body">
+                        {% if ingredientes %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Ingrediente</th>
+                                            <th>Categoria</th>
+                                            <th>Quantidade</th>
+                                            <th>Unidade</th>
+                                            <th>Status</th>
+                                            <th>Valor Estimado</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for ingrediente in ingredientes %}
+                                            <tr>
+                                                <td>{{ ingrediente.nome }}</td>
+                                                <td>{{ ingrediente.categoria }}</td>
+                                                <td>{{ ingrediente.quantidade }}</td>
+                                                <td>{{ ingrediente.unidade }}</td>
+                                                <td>
+                                                    {% if ingrediente.status == 'urgente' %}
+                                                        <span class="badge badge-urgente">Urgente</span>
+                                                    {% elif ingrediente.status == 'planejado' %}
+                                                        <span class="badge badge-planejado">Planejado</span>
+                                                    {% else %}
+                                                        <span class="badge badge-pendente">Pendente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>R$ {{ "%.2f"|format(ingrediente.valor_estimado) }}</td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <a href="{{ url_for('estoque.adicionar_item', ingrediente_id=ingrediente.id) }}" class="btn btn-sm btn-success" title="Adicionar ao Estoque">
+                                                            <i class="fas fa-plus-circle"></i>
+                                                        </a>
+                                                        <a href="{{ url_for('compras.cotacao', ingrediente_id=ingrediente.id) }}" class="btn btn-sm btn-info" title="Buscar Cotações">
+                                                            <i class="fas fa-search-dollar"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-secondary" title="Ver Detalhes" data-toggle="modal" data-target="#modalDetalhes{{ ingrediente.id }}">
+                                                            <i class="fas fa-info-circle"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th colspan="5">Total</th>
+                                            <th>R$ {{ "%.2f"|format(valor_total) }}</th>
+                                            <th></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <nav aria-label="Paginação">
+                                        <ul class="pagination justify-content-center">
+                                            <li class="page-item {% if pagina == 1 %}disabled{% endif %}">
+                                                <a class="page-link" href="{{ url_for('cardapios.planejamento_compras', pagina=pagina-1, cardapio_id=cardapio_id, periodo=periodo, categoria_id=categoria_id, ordenar_por=ordenar_por) }}" aria-label="Anterior">
+                                                    <span aria-hidden="true">&laquo;</span>
+                                                </a>
+                                            </li>
+                                            {% for p in range(1, total_paginas + 1) %}
+                                                <li class="page-item {% if p == pagina %}active{% endif %}">
+                                                    <a class="page-link" href="{{ url_for('cardapios.planejamento_compras', pagina=p, cardapio_id=cardapio_id, periodo=periodo, categoria_id=categoria_id, ordenar_por=ordenar_por) }}">
+                                                        {{ p }}
+                                                    </a>
+                                                </li>
+                                            {% endfor %}
+                                            <li class="page-item {% if pagina == total_paginas %}disabled{% endif %}">
+                                                <a class="page-link" href="{{ url_for('cardapios.planejamento_compras', pagina=pagina+1, cardapio_id=cardapio_id, periodo=periodo, categoria_id=categoria_id, ordenar_por=ordenar_por) }}" aria-label="Próximo">
+                                                    <span aria-hidden="true">&raquo;</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-12 text-center">
+                                    <a href="{{ url_for('cardapios.exportar_lista_compras', cardapio_id=cardapio_id, periodo=periodo, categoria_id=categoria_id, ordenar_por=ordenar_por) }}" class="btn btn-primary">
+                                        <i class="fas fa-file-export"></i> Exportar Lista
+                                    </a>
+                                    <a href="{{ url_for('compras.adicionar_pedido', origem='planejamento', cardapio_id=cardapio_id, periodo=periodo) }}" class="btn btn-success">
+                                        <i class="fas fa-shopping-basket"></i> Criar Pedido de Compra
+                                    </a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Não foram encontrados ingredientes para compra com os filtros selecionados.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-lightbulb"></i> Dicas de Compra
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for dica in dicas_compra %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100 item-card">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ dica.titulo }}</h5>
+                                            <p class="card-text">{{ dica.descricao }}</p>
+                                            {% if dica.economia %}
+                                                <p class="card-text"><small class="text-success"><i class="fas fa-coins"></i> Economia estimada: R$ {{ "%.2f"|format(dica.economia) }}</small></p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Página de planejamento de compras carregada');
+            
+            // Dados para os gráficos com valores padrão caso não existam
+            var dadosDistribuicao = {labels: [], valores: [], cores: []};
+            var dadosTopIngredientes = {labels: [], valores: []};
+            var dadosPrevisaoGastos = {labels: [], valores: []};
+            
+            // Tentar obter os dados do servidor
+            try {
+                {% if dados_distribuicao is defined %}
+                    dadosDistribuicao = {{ dados_distribuicao|safe }};
+                {% endif %}
+                
+                {% if dados_top_ingredientes is defined %}
+                    dadosTopIngredientes = {{ dados_top_ingredientes|safe }};
+                {% endif %}
+                
+                {% if dados_previsao_gastos is defined %}
+                    dadosPrevisaoGastos = {{ dados_previsao_gastos|safe }};
+                {% endif %}
+            } catch (e) {
+                console.error("Erro ao processar dados dos gráficos:", e);
+            }
+            
+            // Inicializar gráfico de distribuição
+            var ctxDistribuicao = document.getElementById('chartDistribuicao');
+            if (ctxDistribuicao) {
+                new Chart(ctxDistribuicao.getContext('2d'), {
+                    type: 'pie',
+                    data: {
+                        labels: dadosDistribuicao.labels,
+                        datasets: [{
+                            data: dadosDistribuicao.valores,
+                            backgroundColor: dadosDistribuicao.cores || [
+                                'rgba(40, 167, 69, 0.7)',
+                                'rgba(0, 123, 255, 0.7)',
+                                'rgba(255, 193, 7, 0.7)',
+                                'rgba(220, 53, 69, 0.7)',
+                                'rgba(111, 66, 193, 0.7)',
+                                'rgba(23, 162, 184, 0.7)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Inicializar gráfico de top ingredientes
+            var ctxTopIngredientes = document.getElementById('chartTopIngredientes');
+            if (ctxTopIngredientes) {
+                new Chart(ctxTopIngredientes.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: dadosTopIngredientes.labels,
+                        datasets: [{
+                            label: 'Valor Total (R$)',
+                            data: dadosTopIngredientes.valores,
+                            backgroundColor: 'rgba(0, 123, 255, 0.7)',
+                            borderColor: 'rgba(0, 123, 255, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Valor (R$)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Inicializar gráfico de previsão de gastos
+            var ctxPrevisaoGastos = document.getElementById('chartPrevisaoGastos');
+            if (ctxPrevisaoGastos) {
+                new Chart(ctxPrevisaoGastos.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: dadosPrevisaoGastos.labels,
+                        datasets: [{
+                            label: 'Gastos Previstos (R$)',
+                            data: dadosPrevisaoGastos.valores,
+                            backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Valor (R$)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Período'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

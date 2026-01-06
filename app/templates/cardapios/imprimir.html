@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ cardapio.nome }} - AleroPrice</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fff;
+        }
+        .cardapio-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .cardapio-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .cardapio-titulo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .cardapio-subtitulo {
+            font-size: 1.2rem;
+            font-style: italic;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+        .secao-titulo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .secao-descricao {
+            font-style: italic;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+        .item-cardapio {
+            margin-bottom: 20px;
+        }
+        .item-nome {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        .item-descricao {
+            font-style: italic;
+            color: #6c757d;
+        }
+        .item-preco {
+            font-weight: bold;
+            text-align: right;
+        }
+        .cardapio-footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+            font-style: italic;
+            color: #6c757d;
+        }
+        .print-controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        @media print {
+            .print-controls {
+                display: none;
+            }
+            body {
+                font-size: 12pt;
+            }
+            .cardapio-titulo {
+                font-size: 24pt;
+            }
+            .cardapio-subtitulo {
+                font-size: 14pt;
+            }
+            .secao-titulo {
+                font-size: 18pt;
+            }
+            .item-nome {
+                font-size: 14pt;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-controls">
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> Imprimir Cardápio
+        </button>
+        <a href="{{ url_for('cardapios.visualizar', id=cardapio.id) }}" class="btn btn-secondary ml-2">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="cardapio-container">
+        <div class="cardapio-header">
+            <div class="cardapio-titulo">{{ cardapio.nome }}</div>
+            {% if cardapio.descricao %}
+            <div class="cardapio-subtitulo">{{ cardapio.descricao }}</div>
+            {% endif %}
+            <div>
+                {% if cardapio.tipo %}
+                <span class="badge badge-secondary">{{ cardapio.tipo }}</span>
+                {% endif %}
+                {% if cardapio.temporada %}
+                <span class="badge badge-info">{{ cardapio.temporada }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% for secao in secoes %}
+        <div class="secao">
+            <div class="secao-titulo">{{ secao.nome }}</div>
+            {% if secao.descricao %}
+            <div class="secao-descricao">{{ secao.descricao }}</div>
+            {% endif %}
+
+            {% for item in secao.itens %}
+            <div class="item-cardapio">
+                <div class="row">
+                    <div class="col-9">
+                        <div class="item-nome">{{ item.prato.nome }}</div>
+                        {% if item.descricao %}
+                        <div class="item-descricao">{{ item.descricao }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-3">
+                        <div class="item-preco">R$ {{ "%.2f"|format(item.preco) }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <div class="cardapio-footer">
+            <p>Preços sujeitos a alteração sem aviso prévio.</p>
+            <p>{{ "Cardápio válido a partir de "|safe }}{{ cardapio.data_inicio.strftime('%d/%m/%Y') }}{% if cardapio.data_fim %} {{ "até"|safe }} {{ cardapio.data_fim.strftime('%d/%m/%Y') }}{% endif %}</p>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

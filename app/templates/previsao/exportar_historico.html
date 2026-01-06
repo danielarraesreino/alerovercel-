@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Exportar Histórico de Vendas</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .export-icon {
+            font-size: 48px;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.index') }}">Previsão</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.listar_historico') }}">Histórico de Vendas</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Exportar Histórico</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="form-container">
+                    <h2 class="form-title">Exportar Histórico de Vendas</h2>
+                    <p class="text-muted">Exporte dados de vendas para análise externa ou backup</p>
+
+                    <form method="post" action="{{ url_for('previsao.exportar_historico') }}">
+                        <div class="text-center mb-4">
+                            <div class="export-icon">
+                                <i class="fas fa-file-export"></i>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_inicio">Data Início:</label>
+                                    <input type="date" class="form-control" id="data_inicio" name="data_inicio">
+                                    <small class="form-text text-muted">Deixe em branco para incluir todos os registros desde o início</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_fim">Data Fim:</label>
+                                    <input type="date" class="form-control" id="data_fim" name="data_fim">
+                                    <small class="form-text text-muted">Deixe em branco para incluir todos os registros até hoje</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tipo de Item:</label>
+                            <div class="custom-control custom-radio">
+                                <input type="radio" id="tipo_todos" name="tipo_item" value="" class="custom-control-input" checked>
+                                <label class="custom-control-label" for="tipo_todos">Todos</label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                                <input type="radio" id="tipo_prato" name="tipo_item" value="prato" class="custom-control-input">
+                                <label class="custom-control-label" for="tipo_prato">Apenas Pratos</label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                                <input type="radio" id="tipo_cardapio" name="tipo_item" value="cardapio_item" class="custom-control-input">
+                                <label class="custom-control-label" for="tipo_cardapio">Apenas Itens de Cardápio</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="formato">Formato de Exportação:</label>
+                            <select class="form-control" id="formato" name="formato">
+                                <option value="csv" selected>CSV (valores separados por vírgula)</option>
+                                <option value="excel">Excel (.xlsx)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="delimitador">Delimitador (para CSV):</label>
+                            <select class="form-control" id="delimitador" name="delimitador">
+                                <option value="," selected>Vírgula (,)</option>
+                                <option value=";">Ponto e vírgula (;)</option>
+                                <option value="\t">Tab</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="incluir_cabecalho" name="incluir_cabecalho" checked>
+                                <label class="custom-control-label" for="incluir_cabecalho">Incluir linha de cabeçalho</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="incluir_metadados" name="incluir_metadados" checked>
+                                <label class="custom-control-label" for="incluir_metadados">Incluir metadados (período, clima, temperatura, eventos)</label>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> A exportação pode levar alguns segundos dependendo da quantidade de dados. Não feche a página durante o processo.
+                        </div>
+
+                        <div class="form-group text-right mt-4">
+                            <a href="{{ url_for('previsao.listar_historico') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-download"></i> Exportar Dados
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Mostrar/ocultar opções de delimitador baseado no formato
+            $('#formato').change(function() {
+                if ($(this).val() === 'csv') {
+                    $('#delimitador').prop('disabled', false);
+                    $('#delimitador').closest('.form-group').show();
+                } else {
+                    $('#delimitador').prop('disabled', true);
+                    $('#delimitador').closest('.form-group').hide();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

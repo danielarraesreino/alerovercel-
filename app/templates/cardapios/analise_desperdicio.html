@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Análise de Desperdício por Item</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card-dashboard {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-dashboard .card-header {
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .badge-alto {
+            background-color: #dc3545;
+            color: white;
+        }
+        .badge-medio {
+            background-color: #ffc107;
+            color: black;
+        }
+        .badge-baixo {
+            background-color: #28a745;
+            color: white;
+        }
+        .item-card {
+            transition: transform 0.3s;
+        }
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .trend-up {
+            color: #dc3545;
+        }
+        .trend-down {
+            color: #28a745;
+        }
+        .trend-stable {
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('cardapios.index') }}">Cardápios</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Análise de Desperdício</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="fas fa-trash-alt text-danger"></i> Análise de Desperdício por Item</h2>
+                <p class="text-muted">Identifique quais itens do cardápio estão gerando mais desperdício e tome ações para reduzir perdas</p>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-filter"></i> Filtros
+                    </div>
+                    <div class="card-body">
+                        <form method="get" action="{{ url_for('cardapios.analise_desperdicio') }}">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="cardapio_id">Cardápio</label>
+                                        <select class="form-control" id="cardapio_id" name="cardapio_id">
+                                            <option value="">Todos os cardápios</option>
+                                            {% for cardapio in cardapios %}
+                                                <option value="{{ cardapio.id }}" {% if cardapio_id == cardapio.id %}selected{% endif %}>
+                                                    {{ cardapio.nome }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="periodo">Período de Análise</label>
+                                        <select class="form-control" id="periodo" name="periodo">
+                                            <option value="7" {% if periodo == 7 %}selected{% endif %}>Últimos 7 dias</option>
+                                            <option value="30" {% if periodo == 30 %}selected{% endif %}>Últimos 30 dias</option>
+                                            <option value="90" {% if periodo == 90 %}selected{% endif %}>Últimos 90 dias</option>
+                                            <option value="180" {% if periodo == 180 %}selected{% endif %}>Últimos 6 meses</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="categoria_id">Categoria de Desperdício</label>
+                                        <select class="form-control" id="categoria_id" name="categoria_id">
+                                            <option value="">Todas as categorias</option>
+                                            {% for categoria in categorias %}
+                                                <option value="{{ categoria.id }}" {% if categoria_id == categoria.id %}selected{% endif %}>
+                                                    {{ categoria.nome }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="ordenar_por">Ordenar por</label>
+                                        <select class="form-control" id="ordenar_por" name="ordenar_por">
+                                            <option value="quantidade" {% if ordenar_por == 'quantidade' %}selected{% endif %}>Maior quantidade</option>
+                                            <option value="valor" {% if ordenar_por == 'valor' %}selected{% endif %}>Maior valor</option>
+                                            <option value="percentual" {% if ordenar_por == 'percentual' %}selected{% endif %}>Maior percentual</option>
+                                            <option value="tendencia" {% if ordenar_por == 'tendencia' %}selected{% endif %}>Tendência de crescimento</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 text-center">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Filtrar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-danger text-white">
+                        <i class="fas fa-chart-pie"></i> Distribuição de Desperdício
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartDistribuicao"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="fas fa-chart-bar"></i> Top 10 Itens com Maior Desperdício
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartTopItens"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-chart-line"></i> Tendência de Desperdício
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartTendencia"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-bullseye"></i> Metas de Redução de Desperdício
+                    </div>
+                    <div class="card-body">
+                        {% if metas %}
+                            <div class="row">
+                                {% for meta in metas %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <span>{{ meta.titulo }}</span>
+                                                <span class="badge badge-{{ meta.status_classe }}">{{ meta.status_texto }}</span>
+                                            </div>
+                                            <div class="card-body">
+                                                <p>{{ meta.descricao }}</p>
+                                                <div class="progress mb-2">
+                                                    <div class="progress-bar bg-{{ meta.status_classe }}" role="progressbar" 
+                                                        style="width: {{ meta.percentual_concluido }}%" 
+                                                        aria-valuenow="{{ meta.percentual_concluido }}" aria-valuemin="0" aria-valuemax="100">
+                                                        {{ meta.percentual_concluido }}%
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex justify-content-between">
+                                                    <small>Início: {{ meta.data_inicio.strftime('%d/%m/%Y') }}</small>
+                                                    <small>Fim: {{ meta.data_fim.strftime('%d/%m/%Y') }}</small>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer">
+                                                <a href="{{ url_for('desperdicio.visualizar_meta', meta_id=meta.id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i> Ver Detalhes
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="{{ url_for('desperdicio.metas') }}" class="btn btn-outline-success">
+                                    <i class="fas fa-list"></i> Ver Todas as Metas
+                                </a>
+                                <a href="{{ url_for('desperdicio.criar_meta') }}" class="btn btn-success">
+                                    <i class="fas fa-plus"></i> Criar Nova Meta
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Não há metas de redução de desperdício definidas.
+                                <a href="{{ url_for('desperdicio.criar_meta') }}" class="btn btn-sm btn-success ml-3">
+                                    <i class="fas fa-plus"></i> Criar Meta
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fas fa-list"></i> Itens com Maior Desperdício
+                    </div>
+                    <div class="card-body">
+                        {% if itens %}
+                            <div class="row">
+                                {% for item in itens %}
+                                    <div class="col-md-4 mb-4">
+                                        <div class="card item-card h-100">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <span>{{ item.prato.nome }}</span>
+                                                <span class="badge badge-{{ item.nivel_classe }}">{{ item.nivel_texto }}</span>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between mb-3">
+                                                    <span><strong>Quantidade:</strong></span>
+                                                    <span>{{ item.quantidade }} {{ item.unidade }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-3">
+                                                    <span><strong>Valor:</strong></span>
+                                                    <span>R$ {{ "%.2f"|format(item.valor) }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-3">
+                                                    <span><strong>Percentual:</strong></span>
+                                                    <span>{{ "%.1f"|format(item.percentual) }}% da produção</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-3">
+                                                    <span><strong>Tendência:</strong></span>
+                                                    <span class="trend-{{ item.tendencia_classe }}">
+                                                        <i class="fas fa-{{ item.tendencia_icone }}"></i> {{ item.tendencia_texto }}
+                                                    </span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-3">
+                                                    <span><strong>Cardápio:</strong></span>
+                                                    <span>{{ item.cardapio_nome }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-3">
+                                                    <span><strong>Categoria:</strong></span>
+                                                    <span>
+                                                        <span class="badge" style="background-color: {{ item.categoria_cor }}">
+                                                            {{ item.categoria_nome }}
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                                
+                                                <div class="progress mt-3" style="height: 10px;">
+                                                    <div class="progress-bar bg-{{ item.nivel_classe }}" role="progressbar" 
+                                                        style="width: {{ item.percentual_maximo }}%" 
+                                                        aria-valuenow="{{ item.percentual_maximo }}" aria-valuemin="0" aria-valuemax="100">
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted d-block text-center mt-1">{{ item.percentual_maximo }}% do desperdício máximo</small>
+                                            </div>
+                                            <div class="card-footer d-flex justify-content-between">
+                                                <a href="{{ url_for('cardapios.visualizar_item', cardapio_id=item.cardapio_id, secao_id=item.secao_id, item_id=item.id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i> Ver Item
+                                                </a>
+                                                <a href="{{ url_for('desperdicio.analise_item', item_id=item.id) }}" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-chart-line"></i> Análise Detalhada
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <nav aria-label="Paginação">
+                                        <ul class="pagination justify-content-center">
+                                            {% if pagina > 1 %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ url_for('cardapios.analise_desperdicio', cardapio_id=cardapio_id, periodo=periodo, categoria_id=categoria_id, ordenar_por=ordenar_por, pagina=pagina-1) }}">
+                                                        <i class="fas fa-chevron-left"></i> Anterior
+                                                    </a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item disabled">
+                                                    <span class="page-link"><i class="fas fa-chevron-left"></i> Anterior</span>
+                                                </li>
+                                            {% endif %}
+                                            
+                                            {% for p in range(1, total_paginas + 1) %}
+                                                <li class="page-item {% if p == pagina %}active{% endif %}">
+                                                    <a class="page-link" href="{{ url_for('cardapios.analise_desperdicio', cardapio_id=cardapio_id, periodo=periodo, categoria_id=categoria_id, ordenar_por=ordenar_por, pagina=p) }}">
+                                                        {{ p }}
+                                                    </a>
+                                                </li>
+                                            {% endfor %}
+                                            
+                                            {% if pagina < total_paginas %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ url_for('cardapios.analise_desperdicio', cardapio_id=cardapio_id, periodo=periodo, categoria_id=categoria_id, ordenar_por=ordenar_por, pagina=pagina+1) }}">
+                                                        Próxima <i class="fas fa-chevron-right"></i>
+                                                    </a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">Próxima <i class="fas fa-chevron-right"></i></span>
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Não foram encontrados registros de desperdício para os filtros selecionados.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-lightbulb"></i> Recomendações para Redução de Desperdício
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-clipboard-list"></i> Ações Recomendadas</h5>
+                            <p>Com base na análise de desperdício, recomendamos as seguintes ações para reduzir perdas:</p>
+                        </div>
+                        
+                        <div class="row">
+                            {% for recomendacao in recomendacoes %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <i class="fas fa-{{ recomendacao.icone }}"></i> {{ recomendacao.titulo }}
+                                        </div>
+                                        <div class="card-body">
+                                            <p>{{ recomendacao.descricao }}</p>
+                                            <div class="d-flex justify-content-between">
+                                                <span><strong>Impacto Estimado:</strong></span>
+                                                <span class="text-{{ recomendacao.impacto_classe }}">
+                                                    {{ recomendacao.impacto_texto }}
+                                                </span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span><strong>Economia Potencial:</strong></span>
+                                                <span>R$ {{ "%.2f"|format(recomendacao.economia) }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer">
+                                            <a href="{{ recomendacao.link }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-external-link-alt"></i> Saiba Mais
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mt-4">
+                            <a href="{{ url_for('desperdicio.exportar_analise', periodo=periodo, cardapio_id=cardapio_id, categoria_id=categoria_id) }}" class="btn btn-success">
+                                <i class="fas fa-file-export"></i> Exportar Análise
+                            </a>
+                            <a href="{{ url_for('desperdicio.criar_meta', origem='analise', periodo=periodo, cardapio_id=cardapio_id, categoria_id=categoria_id) }}" class="btn btn-primary">
+                                <i class="fas fa-bullseye"></i> Criar Meta com Base nesta Análise
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Dados para os gráficos
+        const dadosDistribuicao = {{ dados_distribuicao|safe }};
+        const dadosTopItens = {{ dados_top_itens|safe }};
+        const dadosTendencia = {{ dados_tendencia|safe }};
+        
+        // Configurar gráfico de distribuição
+        const ctxDistribuicao = document.getElementById('chartDistribuicao').getContext('2d');
+        new Chart(ctxDistribuicao, {
+            type: 'pie',
+            data: {
+                labels: dadosDistribuicao.labels,
+                datasets: [{
+                    data: dadosDistribuicao.valores,
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.7)',  // Alto
+                        'rgba(255, 193, 7, 0.7)',  // Médio
+                        'rgba(40, 167, 69, 0.7)'   // Baixo
+                    ],
+                    borderColor: [
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(40, 167, 69, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} itens (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Configurar gráfico de top itens
+        const ctxTopItens = document.getElementById('chartTopItens').getContext('2d');
+        new Chart(ctxTopItens, {
+            type: 'horizontalBar',
+            data: {
+                labels: dadosTopItens.labels,
+                datasets: [{
+                    label: 'Valor do Desperdício (R$)',
+                    data: dadosTopItens.valores,
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Valor (R$)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Configurar gráfico de tendência
+        const ctxTendencia = document.getElementById('chartTendencia').getContext('2d');
+        new Chart(ctxTendencia, {
+            type: 'line',
+            data: {
+                labels: dadosTendencia.labels,
+                datasets: [{
+                    label: 'Valor do Desperdício (R$)',
+                    data: dadosTendencia.valores,
+                    backgroundColor: 'rgba(23, 162, 184, 0.2)',
+                    borderColor: 'rgba(23, 162, 184, 1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Valor (R$)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Período'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

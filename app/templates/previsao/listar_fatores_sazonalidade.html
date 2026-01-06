@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Fatores de Sazonalidade</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .filtros-container {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .card-fator {
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-fator:hover {
+            transform: translateY(-5px);
+        }
+        .badge-tipo {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .fator-valor {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .fator-valor-positivo {
+            color: #28a745;
+        }
+        .fator-valor-negativo {
+            color: #dc3545;
+        }
+        .fator-valor-neutro {
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('previsao.index') }}">Previsão</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Fatores de Sazonalidade</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row align-items-center mb-4">
+            <div class="col-md-8">
+                <h1>Fatores de Sazonalidade</h1>
+                <p class="text-muted">Gerencie os fatores que influenciam a demanda em diferentes períodos e condições</p>
+            </div>
+            <div class="col-md-4 text-right">
+                <a href="{{ url_for('previsao.criar_fator_sazonalidade') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Novo Fator
+                </a>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros-container">
+            <form method="get" action="{{ url_for('previsao.listar_fatores_sazonalidade') }}">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="tipo">Tipo de Fator:</label>
+                            <select class="form-control" id="tipo" name="tipo">
+                                <option value="" {% if not request.args.get('tipo') %}selected{% endif %}>Todos</option>
+                                <option value="dia_semana" {% if request.args.get('tipo') == 'dia_semana' %}selected{% endif %}>Dia da Semana</option>
+                                <option value="mes" {% if request.args.get('tipo') == 'mes' %}selected{% endif %}>Mês</option>
+                                <option value="clima" {% if request.args.get('tipo') == 'clima' %}selected{% endif %}>Clima</option>
+                                <option value="periodo_dia" {% if request.args.get('tipo') == 'periodo_dia' %}selected{% endif %}>Período do Dia</option>
+                                <option value="evento" {% if request.args.get('tipo') == 'evento' %}selected{% endif %}>Evento Especial</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="ordenacao">Ordenar por:</label>
+                            <select class="form-control" id="ordenacao" name="ordenacao">
+                                <option value="nome" {% if request.args.get('ordenacao') == 'nome' %}selected{% endif %}>Nome</option>
+                                <option value="tipo" {% if request.args.get('ordenacao') == 'tipo' %}selected{% endif %}>Tipo</option>
+                                <option value="fator" {% if request.args.get('ordenacao', 'fator') == 'fator' %}selected{% endif %}>Valor do Fator</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary mb-3 w-100">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista de Fatores -->
+        <div class="row">
+            {% for fator in fatores %}
+            <div class="col-md-4">
+                <div class="card card-fator">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ fator.nome }}</h5>
+                        <div class="mb-3">
+                            <span class="badge badge-tipo">{{ fator.tipo|replace('_', ' ')|title }}</span>
+                        </div>
+                        <div class="text-center mb-3">
+                            <div class="fator-valor 
+                                {% if fator.fator > 1 %}fator-valor-positivo
+                                {% elif fator.fator < 1 %}fator-valor-negativo
+                                {% else %}fator-valor-neutro{% endif %}
+                            ">
+                                {% if fator.fator > 1 %}+{% endif %}{{ ((fator.fator - 1) * 100)|int }}%
+                            </div>
+                            <small class="text-muted">
+                                {% if fator.fator > 1 %}
+                                Aumenta a demanda
+                                {% elif fator.fator < 1 %}
+                                Reduz a demanda
+                                {% else %}
+                                Sem efeito na demanda
+                                {% endif %}
+                            </small>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 text-right">
+                                <a href="{{ url_for('previsao.editar_fator_sazonalidade', id=fator.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <a href="{{ url_for('previsao.excluir_fator_sazonalidade', id=fator.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Tem certeza que deseja excluir este fator?')">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Nenhum fator de sazonalidade encontrado. 
+                    <a href="{{ url_for('previsao.criar_fator_sazonalidade') }}" class="alert-link">Crie um novo fator</a> para melhorar a precisão das previsões.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Informações sobre Fatores -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Sobre os Fatores de Sazonalidade</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Os fatores de sazonalidade ajudam a ajustar as previsões de demanda com base em padrões recorrentes ou eventos especiais que afetam as vendas.</p>
+                        
+                        <h6>Tipos de Fatores:</h6>
+                        <ul>
+                            <li><strong>Dia da Semana</strong> - Ajusta a previsão com base no dia da semana (ex: fins de semana geralmente têm maior movimento)</li>
+                            <li><strong>Mês</strong> - Considera variações sazonais ao longo do ano</li>
+                            <li><strong>Clima</strong> - Ajusta a previsão com base nas condições climáticas</li>
+                            <li><strong>Período do Dia</strong> - Considera variações entre almoço, jantar, etc.</li>
+                            <li><strong>Evento Especial</strong> - Ajusta para eventos como feriados, datas comemorativas, etc.</li>
+                        </ul>
+                        
+                        <p>Um fator maior que 1 (ou percentual positivo) indica aumento na demanda, enquanto um fator menor que 1 (percentual negativo) indica redução.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

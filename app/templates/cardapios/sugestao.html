@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Sugestão de Cardápio</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card-sugestao {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-header-sugestao {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .prato-item {
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 0;
+        }
+        .prato-item:last-child {
+            border-bottom: none;
+        }
+        .prato-nome {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .prato-descricao {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .prato-preco {
+            font-weight: bold;
+            color: #28a745;
+        }
+        .prato-margem {
+            font-weight: bold;
+        }
+        .margem-alta {
+            color: #28a745;
+        }
+        .margem-media {
+            color: #fd7e14;
+        }
+        .margem-baixa {
+            color: #dc3545;
+        }
+        .filtros-container {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .secao-titulo {
+            background-color: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('cardapios.index') }}">Cardápios</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Sugestão de Cardápio</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row align-items-center mb-4">
+            <div class="col-md-8">
+                <h1>Sugestão de Cardápio</h1>
+                <p class="text-muted">Baseado em análise de rentabilidade e popularidade dos pratos</p>
+            </div>
+            <div class="col-md-4 text-right">
+                <a href="{{ url_for('cardapios.criar') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Criar Novo Cardápio
+                </a>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros-container">
+            <form method="get" action="{{ url_for('cardapios.sugestao') }}">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="criterio">Critério de Sugestão:</label>
+                            <select name="criterio" id="criterio" class="form-control">
+                                <option value="margem" {% if request.args.get('criterio') == 'margem' %}selected{% endif %}>Maior Margem de Lucro</option>
+                                <option value="popularidade" {% if request.args.get('criterio') == 'popularidade' %}selected{% endif %}>Maior Popularidade</option>
+                                <option value="combinado" {% if request.args.get('criterio', 'combinado') == 'combinado' %}selected{% endif %}>Combinado (Margem + Popularidade)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="periodo">Período de Análise:</label>
+                            <select name="periodo" id="periodo" class="form-control">
+                                <option value="30" {% if request.args.get('periodo', '30') == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                                <option value="90" {% if request.args.get('periodo') == '90' %}selected{% endif %}>Últimos 90 dias</option>
+                                <option value="180" {% if request.args.get('periodo') == '180' %}selected{% endif %}>Últimos 180 dias</option>
+                                <option value="365" {% if request.args.get('periodo') == '365' %}selected{% endif %}>Último ano</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary mb-3 w-100">
+                            <i class="fas fa-filter"></i> Atualizar Sugestão
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Esta sugestão de cardápio é baseada em {{ criterio_texto }} dos pratos nos últimos {{ periodo }} dias. 
+            Você pode utilizar esta sugestão como base para criar um novo cardápio ou para otimizar um cardápio existente.
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card card-sugestao">
+                    <div class="card-header card-header-sugestao">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="mb-0">Cardápio Sugerido</h3>
+                            <a href="#" class="btn btn-success" id="btn-usar-sugestao">
+                                <i class="fas fa-magic"></i> Usar esta Sugestão
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% for categoria, pratos in pratos_por_categoria.items() %}
+                        <div class="secao-cardapio mb-4">
+                            <div class="secao-titulo">{{ categoria }}</div>
+                            
+                            {% for prato in pratos %}
+                            <div class="prato-item">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="prato-nome">{{ prato.nome }}</div>
+                                        <div class="prato-descricao">{{ prato.descricao|truncate(100) }}</div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="prato-preco">R$ {{ "%.2f"|format(prato.preco_venda) }}</div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="prato-margem {% if prato.margem >= 60 %}margem-alta{% elif prato.margem >= 40 %}margem-media{% else %}margem-baixa{% endif %}">
+                                            Margem: {{ "%.1f"|format(prato.margem) }}%
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="prato-popularidade">
+                                            Popularidade: {{ prato.popularidade }}/10
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h4 class="mb-0">Estatísticas da Sugestão</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <h5>Margem Média</h5>
+                                <h2 class="text-success">{{ "%.1f"|format(estatisticas.margem_media) }}%</h2>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <h5>Preço Médio</h5>
+                                <h2>R$ {{ "%.2f"|format(estatisticas.preco_medio) }}</h2>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <h5>Popularidade Média</h5>
+                                <h2 class="text-primary">{{ "%.1f"|format(estatisticas.popularidade_media) }}/10</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para criar cardápio a partir da sugestão -->
+    <div class="modal fade" id="modalCriarCardapio" tabindex="-1" role="dialog" aria-labelledby="modalCriarCardapioLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalCriarCardapioLabel">Criar Cardápio a partir da Sugestão</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{ url_for('cardapios.criar') }}" method="post" id="form-criar-sugestao">
+                    <input type="hidden" name="usar_sugestao" value="true">
+                    <input type="hidden" name="criterio" value="{{ request.args.get('criterio', 'combinado') }}">
+                    <input type="hidden" name="periodo" value="{{ request.args.get('periodo', '30') }}">
+                    
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="nome_cardapio">Nome do Cardápio *</label>
+                            <input type="text" class="form-control" id="nome_cardapio" name="nome" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="descricao_cardapio">Descrição</label>
+                            <textarea class="form-control" id="descricao_cardapio" name="descricao" rows="2"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="tipo_cardapio">Tipo</label>
+                                    <input type="text" class="form-control" id="tipo_cardapio" name="tipo" list="tipos-sugeridos">
+                                    <datalist id="tipos-sugeridos">
+                                        <option value="Almoço">
+                                        <option value="Jantar">
+                                        <option value="Executivo">
+                                        <option value="Delivery">
+                                        <option value="Fim de Semana">
+                                        <option value="Feriados">
+                                    </datalist>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="temporada_cardapio">Temporada</label>
+                                    <input type="text" class="form-control" id="temporada_cardapio" name="temporada" list="temporadas-sugeridas">
+                                    <datalist id="temporadas-sugeridas">
+                                        <option value="Verão">
+                                        <option value="Inverno">
+                                        <option value="Outono">
+                                        <option value="Primavera">
+                                        <option value="Natal">
+                                        <option value="Ano Novo">
+                                        <option value="Páscoa">
+                                        <option value="Carnaval">
+                                    </datalist>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_inicio_cardapio">Data de Início *</label>
+                                    <input type="date" class="form-control" id="data_inicio_cardapio" name="data_inicio" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_fim_cardapio">Data de Término</label>
+                                    <input type="date" class="form-control" id="data_fim_cardapio" name="data_fim">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Criar Cardápio</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Preencher a data de início com a data atual
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0');
+            var yyyy = today.getFullYear();
+            today = yyyy + '-' + mm + '-' + dd;
+            $('#data_inicio_cardapio').val(today);
+            
+            // Abrir modal ao clicar no botão de usar sugestão
+            $('#btn-usar-sugestao').on('click', function(e) {
+                e.preventDefault();
+                $('#modalCriarCardapio').modal('show');
+            });
+        });
+    </script>
+</body>
+</html>

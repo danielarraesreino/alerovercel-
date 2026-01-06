@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}AleroPrice - Dashboard de Lucratividade{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-dashboard {
+        transition: transform 0.3s;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .card-dashboard:hover {
+        transform: translateY(-5px);
+    }
+    .card-profit {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+    }
+    .card-revenue {
+        background-color: #cce5ff;
+        border-color: #b8daff;
+    }
+    .card-cost {
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+    }
+    .card-margin {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .metric-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    .dashboard-section {
+        margin-bottom: 30px;
+    }
+    .dashboard-subtitle {
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        color: #495057;
+    }
+    .periodo-selector {
+        margin-bottom: 20px;
+    }
+    .waste-indicator {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 5px;
+        margin-right: 10px;
+        font-weight: bold;
+    }
+    .waste-high {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .waste-medium {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .waste-low {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .menu-category {
+        font-weight: bold;
+        margin-top: 15px;
+    }
+    .report-link {
+        text-decoration: none;
+        color: #007bff;
+        font-weight: 500;
+    }
+    .report-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-0">Dashboard de Lucratividade</h1>
+        <p class="text-muted">{{ titulo_periodo }}</p>
+    </div>
+    <div class="col-md-4 text-right">
+        <div class="periodo-selector">
+            <form method="get" action="" class="form-inline justify-content-end">
+                <select name="periodo" class="form-control form-control-sm me-2">
+                    <option value="mensal" {% if periodo == 'mensal' %}selected{% endif %}>Mensal</option>
+                    <option value="trimestral" {% if periodo == 'trimestral' %}selected{% endif %}>Trimestral</option>
+                    <option value="anual" {% if periodo == 'anual' %}selected{% endif %}>Anual</option>
+                    <option value="personalizado" {% if periodo == 'personalizado' %}selected{% endif %}>Personalizado</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary">Filtrar</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Métricas Principais -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card card-dashboard card-revenue">
+            <div class="card-body text-center">
+                <div class="metric-title">Receita Total</div>
+                <div class="metric-value">R$ {{ "%.2f"|format(receita_total) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard card-cost">
+            <div class="card-body text-center">
+                <div class="metric-title">Custo Total</div>
+                <div class="metric-value">R$ {{ "%.2f"|format(custo_total) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard card-profit">
+            <div class="card-body text-center">
+                <div class="metric-title">Lucro Total</div>
+                <div class="metric-value">R$ {{ "%.2f"|format(lucro_total) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard card-margin">
+            <div class="card-body text-center">
+                <div class="metric-title">Margem Média</div>
+                <div class="metric-value">{{ "%.1f"|format(margem_media) }}%</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Relatórios Detalhados -->
+<div class="row mt-4 mb-2">
+    <div class="col-12">
+        <h3 class="dashboard-subtitle">Relatórios Detalhados</h3>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card card-dashboard">
+            <div class="card-body">
+                <h5 class="card-title">Análise por Pratos</h5>
+                <p>Verifique a lucratividade detalhada de cada prato, incluindo custos diretos, indiretos e margens.</p>
+                <a href="{{ url_for('dashboard.relatorio_pratos', data_inicio=inicio_periodo.strftime('%Y-%m-%d'), data_fim=fim_periodo.strftime('%Y-%m-%d')) }}" class="btn btn-primary">Ver Relatório</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-dashboard">
+            <div class="card-body">
+                <h5 class="card-title">Análise por Categorias</h5>
+                <p>Visualize o desempenho financeiro agrupado por categorias de produtos e seções do cardápio.</p>
+                <a href="{{ url_for('dashboard.relatorio_categorias', data_inicio=inicio_periodo.strftime('%Y-%m-%d'), data_fim=fim_periodo.strftime('%Y-%m-%d')) }}" class="btn btn-primary">Ver Relatório</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos de Desempenho -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card card-dashboard">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Evolução da Receita</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="receitaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-dashboard">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Composição dos Custos</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="custosChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Análise de Desperdício -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-dashboard">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Análise de Desperdício</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Nível de Desperdício</h6>
+                        <div class="waste-indicator {% if nivel_desperdicio == 'alto' %}waste-high{% elif nivel_desperdicio == 'medio' %}waste-medium{% else %}waste-low{% endif %}">
+                            {{ nivel_desperdicio|title }}
+                        </div>
+                        <p class="mt-2">Valor total do desperdício: R$ {{ "%.2f"|format(valor_desperdicio) }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Impacto na Lucratividade</h6>
+                        <p>O desperdício representa {{ "%.1f"|format(impacto_desperdicio) }}% do custo total</p>
+                        <a href="{{ url_for('desperdicio.index') }}" class="btn btn-sm btn-outline-primary">Ver Detalhes</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Análise de Cardápio -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-dashboard">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Análise de Cardápio</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for categoria in categorias_cardapio %}
+                    <div class="col-md-4">
+                        <div class="menu-category">{{ categoria.nome }}</div>
+                        <ul class="list-unstyled">
+                            {% for prato in categoria.pratos %}
+                            <li>
+                                <a href="{{ url_for('cardapios.analise_rentabilidade', id=prato.id) }}" class="report-link">
+                                    {{ prato.nome }}
+                                </a>
+                                <span class="text-muted">({{ "%.1f"|format(prato.margem) }}%)</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Dados para os gráficos
+    const dadosReceita = {{ dados_receita|safe }};
+    const dadosCustos = {{ dados_custos|safe }};
+    
+    // Configurar gráfico de receita
+    const ctxReceita = document.getElementById('receitaChart').getContext('2d');
+    new Chart(ctxReceita, {
+        type: 'line',
+        data: {
+            labels: dadosReceita.map(item => item.data),
+            datasets: [{
+                label: 'Receita',
+                data: dadosReceita.map(item => item.valor),
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR');
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Configurar gráfico de custos
+    const ctxCustos = document.getElementById('custosChart').getContext('2d');
+    new Chart(ctxCustos, {
+        type: 'doughnut',
+        data: {
+            labels: dadosCustos.map(item => item.categoria),
+            datasets: [{
+                data: dadosCustos.map(item => item.valor),
+                backgroundColor: [
+                    '#007bff',
+                    '#28a745',
+                    '#ffc107',
+                    '#dc3545',
+                    '#17a2b8'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

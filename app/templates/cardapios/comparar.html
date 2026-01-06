@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Comparar Cardápios</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card-dashboard {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-dashboard .card-header {
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .comparison-table th, .comparison-table td {
+            text-align: center;
+        }
+        .comparison-table th:first-child, .comparison-table td:first-child {
+            text-align: left;
+        }
+        .comparison-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .valor-maior {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .valor-menor {
+            color: #dc3545;
+        }
+        .valor-igual {
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('cardapios.index') }}">Cardápios</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Comparar Cardápios</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="fas fa-balance-scale text-primary"></i> Comparar Cardápios</h2>
+                <p class="text-muted">Compare diferentes cardápios para análise de desempenho</p>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="comparison-header">
+                    <form method="get" action="{{ url_for('cardapios.comparar') }}">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <label for="cardapio1_id">Cardápio 1</label>
+                                    <select class="form-control" id="cardapio1_id" name="cardapio1_id" required>
+                                        <option value="">Selecione um cardápio</option>
+                                        {% for cardapio in cardapios %}
+                                            <option value="{{ cardapio.id }}" {% if cardapio1_id == cardapio.id %}selected{% endif %}>
+                                                {{ cardapio.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <div class="form-group">
+                                    <label>&nbsp;</label>
+                                    <div class="pt-2">
+                                        <i class="fas fa-exchange-alt fa-2x text-muted"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <label for="cardapio2_id">Cardápio 2</label>
+                                    <select class="form-control" id="cardapio2_id" name="cardapio2_id" required>
+                                        <option value="">Selecione um cardápio</option>
+                                        {% for cardapio in cardapios %}
+                                            <option value="{{ cardapio.id }}" {% if cardapio2_id == cardapio.id %}selected{% endif %}>
+                                                {{ cardapio.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-sync-alt"></i> Comparar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {% if cardapio1 and cardapio2 %}
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-info-circle"></i> {{ cardapio1.nome }}
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Data de Criação:</strong> {{ cardapio1.data_criacao.strftime('%d/%m/%Y') }}</p>
+                                <p><strong>Status:</strong> {{ cardapio1.status }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Total de Itens:</strong> {{ cardapio1.total_itens }}</p>
+                                <p><strong>Total de Seções:</strong> {{ cardapio1.total_secoes }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-info-circle"></i> {{ cardapio2.nome }}
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Data de Criação:</strong> {{ cardapio2.data_criacao.strftime('%d/%m/%Y') }}</p>
+                                <p><strong>Status:</strong> {{ cardapio2.status }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Total de Itens:</strong> {{ cardapio2.total_itens }}</p>
+                                <p><strong>Total de Seções:</strong> {{ cardapio2.total_secoes }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-chart-pie"></i> Comparação de Rentabilidade
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartRentabilidade"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="fas fa-chart-bar"></i> Comparação de Preços
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartPrecos"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fas fa-table"></i> Comparação Detalhada
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped comparison-table">
+                                <thead>
+                                    <tr>
+                                        <th>Métrica</th>
+                                        <th>{{ cardapio1.nome }}</th>
+                                        <th>{{ cardapio2.nome }}</th>
+                                        <th>Diferença</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Número de Itens</td>
+                                        <td>{{ cardapio1.total_itens }}</td>
+                                        <td>{{ cardapio2.total_itens }}</td>
+                                        <td class="{% if cardapio1.total_itens > cardapio2.total_itens %}valor-maior{% elif cardapio1.total_itens < cardapio2.total_itens %}valor-menor{% else %}valor-igual{% endif %}">
+                                            {{ cardapio1.total_itens - cardapio2.total_itens }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Número de Seções</td>
+                                        <td>{{ cardapio1.total_secoes }}</td>
+                                        <td>{{ cardapio2.total_secoes }}</td>
+                                        <td class="{% if cardapio1.total_secoes > cardapio2.total_secoes %}valor-maior{% elif cardapio1.total_secoes < cardapio2.total_secoes %}valor-menor{% else %}valor-igual{% endif %}">
+                                            {{ cardapio1.total_secoes - cardapio2.total_secoes }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Preço Médio</td>
+                                        <td>R$ {{ "%.2f"|format(cardapio1.preco_medio) }}</td>
+                                        <td>R$ {{ "%.2f"|format(cardapio2.preco_medio) }}</td>
+                                        <td class="{% if cardapio1.preco_medio > cardapio2.preco_medio %}valor-maior{% elif cardapio1.preco_medio < cardapio2.preco_medio %}valor-menor{% else %}valor-igual{% endif %}">
+                                            R$ {{ "%.2f"|format(cardapio1.preco_medio - cardapio2.preco_medio) }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Margem Média</td>
+                                        <td>{{ "%.1f"|format(cardapio1.margem_media) }}%</td>
+                                        <td>{{ "%.1f"|format(cardapio2.margem_media) }}%</td>
+                                        <td class="{% if cardapio1.margem_media > cardapio2.margem_media %}valor-maior{% elif cardapio1.margem_media < cardapio2.margem_media %}valor-menor{% else %}valor-igual{% endif %}">
+                                            {{ "%.1f"|format(cardapio1.margem_media - cardapio2.margem_media) }}%
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Itens de Alta Rentabilidade</td>
+                                        <td>{{ cardapio1.itens_alta_rentabilidade }} ({{ "%.1f"|format(cardapio1.percentual_alta_rentabilidade) }}%)</td>
+                                        <td>{{ cardapio2.itens_alta_rentabilidade }} ({{ "%.1f"|format(cardapio2.percentual_alta_rentabilidade) }}%)</td>
+                                        <td class="{% if cardapio1.itens_alta_rentabilidade > cardapio2.itens_alta_rentabilidade %}valor-maior{% elif cardapio1.itens_alta_rentabilidade < cardapio2.itens_alta_rentabilidade %}valor-menor{% else %}valor-igual{% endif %}">
+                                            {{ cardapio1.itens_alta_rentabilidade - cardapio2.itens_alta_rentabilidade }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Itens de Baixa Rentabilidade</td>
+                                        <td>{{ cardapio1.itens_baixa_rentabilidade }} ({{ "%.1f"|format(cardapio1.percentual_baixa_rentabilidade) }}%)</td>
+                                        <td>{{ cardapio2.itens_baixa_rentabilidade }} ({{ "%.1f"|format(cardapio2.percentual_baixa_rentabilidade) }}%)</td>
+                                        <td class="{% if cardapio1.itens_baixa_rentabilidade < cardapio2.itens_baixa_rentabilidade %}valor-maior{% elif cardapio1.itens_baixa_rentabilidade > cardapio2.itens_baixa_rentabilidade %}valor-menor{% else %}valor-igual{% endif %}">
+                                            {{ cardapio1.itens_baixa_rentabilidade - cardapio2.itens_baixa_rentabilidade }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-dashboard">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-lightbulb"></i> Análise Comparativa
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-chart-line"></i> Resumo da Comparação</h5>
+                            <p>{{ analise_resumo }}</p>
+                        </div>
+                        
+                        <h5 class="mt-4">Pontos Fortes e Fracos</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">{{ cardapio1.nome }}</div>
+                                    <div class="card-body">
+                                        <h6>Pontos Fortes</h6>
+                                        <ul>
+                                            {% for ponto in cardapio1_pontos_fortes %}
+                                                <li>{{ ponto }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                        
+                                        <h6>Pontos Fracos</h6>
+                                        <ul>
+                                            {% for ponto in cardapio1_pontos_fracos %}
+                                                <li>{{ ponto }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">{{ cardapio2.nome }}</div>
+                                    <div class="card-body">
+                                        <h6>Pontos Fortes</h6>
+                                        <ul>
+                                            {% for ponto in cardapio2_pontos_fortes %}
+                                                <li>{{ ponto }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                        
+                                        <h6>Pontos Fracos</h6>
+                                        <ul>
+                                            {% for ponto in cardapio2_pontos_fracos %}
+                                                <li>{{ ponto }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h5 class="mt-4">Recomendações</h5>
+                        <ul>
+                            {% for recomendacao in recomendacoes %}
+                                <li><i class="fas fa-check-circle text-success mr-2"></i> {{ recomendacao }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    {% if cardapio1 and cardapio2 %}
+    <script>
+        // Dados para os gráficos
+        const dadosRentabilidade = {{ dados_rentabilidade|safe }};
+        const dadosPrecos = {{ dados_precos|safe }};
+        
+        // Configurar gráfico de rentabilidade
+        const ctxRentabilidade = document.getElementById('chartRentabilidade').getContext('2d');
+        new Chart(ctxRentabilidade, {
+            type: 'radar',
+            data: {
+                labels: dadosRentabilidade.labels,
+                datasets: [
+                    {
+                        label: '{{ cardapio1.nome }}',
+                        data: dadosRentabilidade.cardapio1,
+                        backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(0, 123, 255, 1)'
+                    },
+                    {
+                        label: '{{ cardapio2.nome }}',
+                        data: dadosRentabilidade.cardapio2,
+                        backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(40, 167, 69, 1)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0
+                    }
+                }
+            }
+        });
+        
+        // Configurar gráfico de preços
+        const ctxPrecos = document.getElementById('chartPrecos').getContext('2d');
+        new Chart(ctxPrecos, {
+            type: 'bar',
+            data: {
+                labels: dadosPrecos.secoes,
+                datasets: [
+                    {
+                        label: '{{ cardapio1.nome }}',
+                        data: dadosPrecos.cardapio1,
+                        backgroundColor: 'rgba(0, 123, 255, 0.7)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '{{ cardapio2.nome }}',
+                        data: dadosPrecos.cardapio2,
+                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Preço Médio (R$)'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

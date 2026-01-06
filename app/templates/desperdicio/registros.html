@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Registros de Desperdício</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card-dashboard {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-dashboard .card-header {
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+        }
+        .filter-container {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .registro-item {
+            border-left: 4px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fff;
+            border-radius: 0 5px 5px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+        .registro-item:hover {
+            transform: translateX(5px);
+        }
+        .categoria-badge {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .pagination .page-link {
+            color: #343a40;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #343a40;
+            border-color: #343a40;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.index') }}">Desperdício</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Registros</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2><i class="fas fa-clipboard-list text-primary"></i> Registros de Desperdício</h2>
+                <p class="text-muted">Visualize e gerencie todos os registros de desperdício</p>
+            </div>
+            <div class="col-md-4 text-right">
+                <a href="{{ url_for('desperdicio.registrar_desperdicio') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Novo Registro
+                </a>
+                <a href="{{ url_for('desperdicio.exportar_registros') }}" class="btn btn-outline-secondary ml-2">
+                    <i class="fas fa-file-export"></i> Exportar
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="filter-container">
+                    <form method="get" action="{{ url_for('desperdicio.listar_registros') }}">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="categoria_id">Categoria</label>
+                                    <select class="form-control" id="categoria_id" name="categoria_id">
+                                        <option value="">Todas as categorias</option>
+                                        {% for categoria in categorias %}
+                                            <option value="{{ categoria.id }}" {% if request.args.get('categoria_id')|int == categoria.id %}selected{% endif %}>
+                                                {{ categoria.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="data_inicio">Data Inicial</label>
+                                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ request.args.get('data_inicio', '') }}">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="data_fim">Data Final</label>
+                                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ request.args.get('data_fim', '') }}">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="tipo_item">Tipo de Item</label>
+                                    <select class="form-control" id="tipo_item" name="tipo_item">
+                                        <option value="">Todos os tipos</option>
+                                        <option value="produto" {% if request.args.get('tipo_item') == 'produto' %}selected{% endif %}>Produtos</option>
+                                        <option value="prato" {% if request.args.get('tipo_item') == 'prato' %}selected{% endif %}>Pratos</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 text-right">
+                                <a href="{{ url_for('desperdicio.listar_registros') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Limpar
+                                </a>
+                                <button type="submit" class="btn btn-primary ml-2">
+                                    <i class="fas fa-filter"></i> Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                {% if registros.items %}
+                    {% for registro in registros.items %}
+                        <div class="registro-item" style="border-left-color: {{ registro.categoria.cor }};">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h5 class="mb-0">
+                                            {% if registro.produto %}
+                                                <i class="fas fa-box text-secondary mr-2"></i> {{ registro.produto.nome }}
+                                            {% elif registro.prato %}
+                                                <i class="fas fa-utensils text-secondary mr-2"></i> {{ registro.prato.nome }}
+                                            {% endif %}
+                                        </h5>
+                                    </div>
+                                    <div>
+                                        <span class="badge badge-pill" style="background-color: {{ registro.categoria.cor }}; color: white;">
+                                            {{ registro.categoria.nome }}
+                                        </span>
+                                        <span class="ml-2">
+                                            <i class="fas fa-calendar-alt text-muted"></i> {{ registro.data_registro.strftime('%d/%m/%Y') }}
+                                        </span>
+                                        <span class="ml-2">
+                                            <i class="fas fa-balance-scale text-muted"></i> {{ registro.quantidade }} {{ registro.unidade }}
+                                        </span>
+                                    </div>
+                                    {% if registro.observacao %}
+                                        <div class="mt-2 text-muted">
+                                            <i class="fas fa-comment-alt"></i> {{ registro.observacao }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 text-right">
+                                    <div class="text-danger font-weight-bold mb-2">
+                                        R$ {{ "%.2f"|format(registro.valor_estimado) }}
+                                    </div>
+                                    <div>
+                                        <a href="{{ url_for('desperdicio.visualizar_registro', id=registro.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> Detalhes
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Paginação -->
+                    <nav aria-label="Navegação de registros">
+                        <ul class="pagination justify-content-center">
+                            {% if registros.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('desperdicio.listar_registros', page=registros.prev_num, categoria_id=request.args.get('categoria_id', ''), data_inicio=request.args.get('data_inicio', ''), data_fim=request.args.get('data_fim', ''), tipo_item=request.args.get('tipo_item', '')) }}">
+                                        <i class="fas fa-chevron-left"></i> Anterior
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-chevron-left"></i> Anterior</span>
+                                </li>
+                            {% endif %}
+
+                            {% for page_num in registros.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == registros.page %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('desperdicio.listar_registros', page=page_num, categoria_id=request.args.get('categoria_id', ''), data_inicio=request.args.get('data_inicio', ''), data_fim=request.args.get('data_fim', ''), tipo_item=request.args.get('tipo_item', '')) }}">
+                                                {{ page_num }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if registros.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('desperdicio.listar_registros', page=registros.next_num, categoria_id=request.args.get('categoria_id', ''), data_inicio=request.args.get('data_inicio', ''), data_fim=request.args.get('data_fim', ''), tipo_item=request.args.get('tipo_item', '')) }}">
+                                        Próxima <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Próxima <i class="fas fa-chevron-right"></i></span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Nenhum registro de desperdício encontrado com os filtros selecionados.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

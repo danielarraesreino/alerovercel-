@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Editar Cardápio</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('cardapios.index') }}">Cardápios</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('cardapios.visualizar', id=cardapio.id) }}">{{ cardapio.nome }}</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Editar</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="form-container">
+                    <h2 class="form-title">Editar Cardápio</h2>
+
+                    <form method="post" action="{{ url_for('cardapios.editar', id=cardapio.id) }}">
+                        <div class="form-group">
+                            <label for="nome">Nome do Cardápio *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" value="{{ cardapio.nome }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descricao">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="3">{{ cardapio.descricao }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="tipo">Tipo</label>
+                                    <input type="text" class="form-control" id="tipo" name="tipo" value="{{ cardapio.tipo }}" list="tipos-sugeridos">
+                                    <datalist id="tipos-sugeridos">
+                                        <option value="Almoço">
+                                        <option value="Jantar">
+                                        <option value="Executivo">
+                                        <option value="Delivery">
+                                        <option value="Fim de Semana">
+                                        <option value="Feriados">
+                                    </datalist>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="temporada">Temporada</label>
+                                    <input type="text" class="form-control" id="temporada" name="temporada" value="{{ cardapio.temporada }}" list="temporadas-sugeridas">
+                                    <datalist id="temporadas-sugeridas">
+                                        <option value="Verão">
+                                        <option value="Inverno">
+                                        <option value="Outono">
+                                        <option value="Primavera">
+                                        <option value="Natal">
+                                        <option value="Ano Novo">
+                                        <option value="Páscoa">
+                                        <option value="Carnaval">
+                                    </datalist>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_inicio">Data de Início *</label>
+                                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ cardapio.data_inicio.strftime('%Y-%m-%d') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_fim">Data de Término</label>
+                                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{% if cardapio.data_fim %}{{ cardapio.data_fim.strftime('%Y-%m-%d') }}{% endif %}">
+                                    <small class="form-text text-muted">Deixe em branco para cardápios sem data de término definida.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="ativo" name="ativo" {% if cardapio.ativo %}checked{% endif %}>
+                                <label class="custom-control-label" for="ativo">Cardápio Ativo</label>
+                            </div>
+                            <small class="form-text text-muted">Cardápios inativos não aparecem para os clientes, mas continuam armazenados no sistema.</small>
+                        </div>
+
+                        <div class="form-group text-right mt-4">
+                            <a href="{{ url_for('cardapios.visualizar', id=cardapio.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

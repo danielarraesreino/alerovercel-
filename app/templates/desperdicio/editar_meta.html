@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Editar Meta de Redução de Desperdício</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .tipo-meta-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            background-color: #17a2b8;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .categoria-badge {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .progress-container {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+        .meta-progress {
+            height: 15px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.index') }}">Desperdício</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('desperdicio.listar_metas') }}">Metas</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Editar Meta</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="form-container">
+                    <h2 class="form-title">Editar Meta de Redução</h2>
+                    <p class="text-muted">Atualize as informações da meta</p>
+
+                    <div class="text-center">
+                        <div class="tipo-meta-badge">
+                            {% if meta.tipo == 'valor' %}
+                                <i class="fas fa-dollar-sign mr-2"></i> Meta de Valor
+                            {% elif meta.tipo == 'quantidade' %}
+                                <i class="fas fa-balance-scale mr-2"></i> Meta de Quantidade
+                            {% elif meta.tipo == 'percentual' %}
+                                <i class="fas fa-percentage mr-2"></i> Meta Percentual
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="progress-container">
+                        <h5>Progresso Atual</h5>
+                        <div class="d-flex justify-content-between">
+                            <div>{{ meta.progresso }}% concluído</div>
+                            <div>
+                                {% if meta.tipo == 'valor' %}
+                                    Meta: R$ {{ "%.2f"|format(meta.valor_meta) }} | Atual: R$ {{ "%.2f"|format(meta.valor_atual) }}
+                                {% elif meta.tipo == 'quantidade' %}
+                                    Meta: {{ meta.valor_meta }} ocorrências | Atual: {{ meta.valor_atual }} ocorrências
+                                {% elif meta.tipo == 'percentual' %}
+                                    Meta: {{ meta.valor_meta }}% | Atual: {{ meta.valor_atual }}%
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="progress meta-progress mt-2">
+                            <div class="progress-bar bg-{{ 'success' if meta.progresso >= 80 else 'warning' if meta.progresso >= 50 else 'danger' }}" 
+                                 role="progressbar" 
+                                 style="width: {{ meta.progresso }}%" 
+                                 aria-valuenow="{{ meta.progresso }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" action="{{ url_for('desperdicio.editar_meta', id=meta.id) }}">
+                        <input type="hidden" name="tipo" value="{{ meta.tipo }}">
+                        
+                        <div class="form-group">
+                            <label for="nome">Nome da Meta *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" value="{{ meta.nome }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descricao">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="3">{{ meta.descricao }}</textarea>
+                            <small class="form-text text-muted">Uma breve descrição desta meta (opcional)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="valor_meta">Valor da Meta *</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="meta-prefix">
+                                        {% if meta.tipo == 'valor' %}R${% endif %}
+                                    </span>
+                                </div>
+                                <input type="number" class="form-control" id="valor_meta" name="valor_meta" step="0.01" min="0.01" value="{{ meta.valor_meta }}" required>
+                                <div class="input-group-append">
+                                    <span class="input-group-text" id="meta-suffix">
+                                        {% if meta.tipo == 'quantidade' %}ocorrências{% elif meta.tipo == 'percentual' %}%{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted" id="meta-help">
+                                {% if meta.tipo == 'valor' %}
+                                    Valor a ser reduzido em reais
+                                {% elif meta.tipo == 'quantidade' %}
+                                    Número de ocorrências a serem reduzidas
+                                {% elif meta.tipo == 'percentual' %}
+                                    Percentual de redução desejado
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="valor_referencia">Valor de Referência</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="ref-prefix">
+                                        {% if meta.tipo == 'valor' or meta.tipo == 'percentual' %}R${% endif %}
+                                    </span>
+                                </div>
+                                <input type="number" class="form-control" id="valor_referencia" name="valor_referencia" step="0.01" min="0" value="{{ meta.valor_referencia }}">
+                                <div class="input-group-append">
+                                    <span class="input-group-text" id="ref-suffix">
+                                        {% if meta.tipo == 'quantidade' %}ocorrências{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted" id="ref-help">
+                                {% if meta.tipo == 'valor' or meta.tipo == 'quantidade' %}
+                                    Valor base para cálculo do progresso (opcional)
+                                {% elif meta.tipo == 'percentual' %}
+                                    Valor base em reais para cálculo do percentual (opcional)
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="categoria_id">Categoria</label>
+                            <select class="form-control" id="categoria_id" name="categoria_id">
+                                <option value="">Todas as categorias</option>
+                                {% for categoria in categorias %}
+                                    {% if categoria.ativo or (meta.categoria_id and meta.categoria_id == categoria.id) %}
+                                        <option value="{{ categoria.id }}" {% if meta.categoria_id == categoria.id %}selected{% endif %}>
+                                            <span class="categoria-badge" style="background-color: {{ categoria.cor }}"></span>
+                                            {{ categoria.nome }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Selecione uma categoria específica ou deixe em branco para todas</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_inicio">Data Inicial *</label>
+                                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ meta.data_inicio.strftime('%Y-%m-%d') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data_fim">Data Final *</label>
+                                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ meta.data_fim.strftime('%Y-%m-%d') }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="ativo" name="ativo" {% if meta.ativo %}checked{% endif %}>
+                                <label class="custom-control-label" for="ativo">Meta Ativa</label>
+                            </div>
+                            <small class="form-text text-muted">Desative para pausar o monitoramento desta meta</small>
+                        </div>
+
+                        <div class="form-group text-right mt-4">
+                            <a href="{{ url_for('desperdicio.listar_metas') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

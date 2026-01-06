@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}AleroPrice - Previsão de Demanda{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-dashboard {
+        transition: transform 0.3s;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .card-dashboard:hover {
+        transform: translateY(-5px);
+    }
+    .card-estatistica {
+        background-color: #e9f7fb;
+        border-color: #b8daff;
+    }
+    .card-previsao {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+    }
+    .card-alerta {
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .metric-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    .dashboard-section {
+        margin-bottom: 30px;
+    }
+    .dashboard-subtitle {
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        color: #495057;
+    }
+    .top-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .top-item:last-child {
+        border-bottom: none;
+    }
+    .top-item-name {
+        font-weight: 500;
+    }
+    .top-item-value {
+        font-weight: bold;
+        color: #007bff;
+    }
+    .previsao-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .previsao-item:last-child {
+        border-bottom: none;
+    }
+    .previsao-data {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .confiabilidade-alta {
+        color: #28a745;
+    }
+    .confiabilidade-media {
+        color: #fd7e14;
+    }
+    .confiabilidade-baixa {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-0">Previsão de Demanda</h1>
+        <p class="text-muted">Análise e projeção de vendas para otimização da produção</p>
+    </div>
+    <div class="col-md-4 text-right">
+        <a href="{{ url_for('previsao.gerar_previsao') }}" class="btn btn-primary{% if not registros_suficientes %} disabled{% endif %}">
+            <i class="fas fa-chart-line"></i> Gerar Nova Previsão
+        </a>
+    </div>
+</div>
+
+<!-- Métricas Principais -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card card-dashboard card-estatistica">
+            <div class="card-body text-center">
+                <div class="metric-title">Registros de Vendas</div>
+                <div class="metric-value">{{ total_registros }}</div>
+                <a href="{{ url_for('previsao.listar_historico') }}" class="btn btn-sm btn-outline-primary mt-2">Ver Histórico</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-dashboard card-previsao">
+            <div class="card-body text-center">
+                <div class="metric-title">Previsões Geradas</div>
+                <div class="metric-value">{{ total_previsoes }}</div>
+                <a href="{{ url_for('previsao.listar_previsoes') }}" class="btn btn-sm btn-outline-success mt-2">Ver Previsões</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-dashboard card-alerta">
+            <div class="card-body text-center">
+                <div class="metric-title">Fatores de Sazonalidade</div>
+                <div class="metric-value"><i class="fas fa-calendar-alt"></i></div>
+                <a href="{{ url_for('previsao.listar_fatores_sazonalidade') }}" class="btn btn-sm btn-outline-warning mt-2">Gerenciar Fatores</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not registros_suficientes %}
+<div class="alert alert-warning mt-4">
+    <i class="fas fa-exclamation-triangle"></i> <strong>Atenção:</strong> Você precisa de pelo menos 14 dias de registros de vendas para gerar previsões confiáveis. 
+    <a href="{{ url_for('previsao.registrar_venda') }}" class="alert-link">Registre mais vendas</a> ou 
+    <a href="{{ url_for('previsao.importar_historico') }}" class="alert-link">importe seu histórico</a>.
+</div>
+{% endif %}
+
+<!-- Gráfico de Vendas -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Vendas dos Últimos 30 Dias</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="vendasChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Itens Mais Vendidos e Últimas Previsões -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Itens Mais Vendidos</h5>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="itemsTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="pratos-tab" data-toggle="tab" href="#pratos" role="tab">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="produtos-tab" data-toggle="tab" href="#produtos" role="tab">Produtos</a>
+                    </li>
+                </ul>
+                <div class="tab-content mt-3" id="itemsTabContent">
+                    <div class="tab-pane fade show active" id="pratos" role="tabpanel">
+                        {% for prato in top_pratos %}
+                        <div class="top-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="top-item-name">{{ prato.nome }}</div>
+                                <div class="top-item-value">{{ prato.quantidade }} un.</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="tab-pane fade" id="produtos" role="tabpanel">
+                        {% for produto in top_produtos %}
+                        <div class="top-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="top-item-name">{{ produto.nome }}</div>
+                                <div class="top-item-value">{{ produto.quantidade }} {{ produto.unidade }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Últimas Previsões</h5>
+            </div>
+            <div class="card-body">
+                {% if ultimas_previsoes %}
+                    {% for previsao in ultimas_previsoes %}
+                    <div class="previsao-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="font-weight-bold">{{ previsao.item.prato.nome }}</div>
+                                <div class="previsao-data">
+                                    Gerada em {{ previsao.data_geracao.strftime('%d/%m/%Y') }}
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-weight-bold">{{ previsao.quantidade_prevista }} {{ previsao.item.unidade }}</div>
+                                <div class="{% if previsao.confiabilidade >= 80 %}confiabilidade-alta{% elif previsao.confiabilidade >= 60 %}confiabilidade-media{% else %}confiabilidade-baixa{% endif %}">
+                                    {{ previsao.confiabilidade }}% de confiabilidade
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-line text-muted fa-2x mb-3"></i>
+                        <p>Nenhuma previsão gerada ainda</p>
+                        <a href="{{ url_for('previsao.gerar_previsao') }}" class="btn btn-sm btn-primary">
+                            Gerar Primeira Previsão
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Dados para o gráfico de vendas
+    const dadosVendas = {{ dados_vendas|safe }};
+    
+    // Configurar gráfico de vendas
+    const ctx = document.getElementById('vendasChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dadosVendas.map(item => item.data),
+            datasets: [{
+                label: 'Vendas',
+                data: dadosVendas.map(item => item.quantidade),
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

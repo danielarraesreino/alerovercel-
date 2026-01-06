@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AleroPrice - Editar Seção do Cardápio</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AleroPrice</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pratos.index') }}">Pratos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('estoque.index') }}">Estoque</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('cardapios.index') }}">Cardápios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('previsao.index') }}">Previsão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('desperdicio.index') }}">Desperdício</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('cardapios.index') }}">Cardápios</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('cardapios.visualizar', id=secao.cardapio.id) }}">{{ secao.cardapio.nome }}</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Editar Seção</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="form-container">
+                    <h2 class="form-title">Editar Seção do Cardápio</h2>
+                    <p class="text-muted">Cardápio: <strong>{{ secao.cardapio.nome }}</strong></p>
+
+                    <form method="post" action="{{ url_for('cardapios.editar_secao', id=secao.id) }}">
+                        <div class="form-group">
+                            <label for="nome">Nome da Seção *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" value="{{ secao.nome }}" required list="secoes-sugeridas">
+                            <datalist id="secoes-sugeridas">
+                                <option value="Entradas">
+                                <option value="Aperitivos">
+                                <option value="Pratos Principais">
+                                <option value="Carnes">
+                                <option value="Peixes e Frutos do Mar">
+                                <option value="Massas">
+                                <option value="Saladas">
+                                <option value="Acompanhamentos">
+                                <option value="Sobremesas">
+                                <option value="Bebidas">
+                                <option value="Drinks">
+                                <option value="Cafeteria">
+                            </datalist>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descricao">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="2">{{ secao.descricao }}</textarea>
+                            <small class="form-text text-muted">Uma breve descrição da seção (opcional).</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ordem">Ordem de Exibição</label>
+                            <input type="number" class="form-control" id="ordem" name="ordem" min="1" value="{{ secao.ordem }}">
+                            <small class="form-text text-muted">Número que define a ordem de exibição da seção no cardápio.</small>
+                        </div>
+
+                        <div class="form-group text-right mt-4">
+                            <a href="{{ url_for('cardapios.visualizar', id=secao.cardapio.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

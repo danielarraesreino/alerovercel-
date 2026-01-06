@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Prato{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Novo Prato</h1>
+        <a href="{{ url_for('pratos.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Dados do Prato</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" id="formPrato">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">Nome
+                                <span tabindex="0" data-toggle="popover" data-trigger="focus" title="Nome do Prato" data-content="Digite o nome completo do prato. Ex: Filé ao Molho Madeira">
+                                    <i class="fas fa-question-circle text-info" style="cursor:pointer;"></i>
+                                </span>
+                            </label>
+                            <input type="text" class="form-control" id="nome" name="nome" required>
+                            <small class="form-text text-muted">Ex: Filé ao Molho Madeira, Risoto de Cogumelos, etc.</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="categoria" class="form-label">Categoria
+                                <span tabindex="0" data-toggle="popover" data-trigger="focus" title="Categoria do Prato" data-content="Selecione a categoria que melhor representa este prato no seu cardápio">
+                                    <i class="fas fa-question-circle text-info" style="cursor:pointer;"></i>
+                                </span>
+                            </label>
+                            <select class="form-control" id="categoria" name="categoria">
+                                <option value="">Selecione...</option>
+                                <option value="entrada">Entrada</option>
+                                <option value="prato_principal">Prato Principal</option>
+                                <option value="sobremesa">Sobremesa</option>
+                                <option value="bebida">Bebida</option>
+                            </select>
+                            <small class="form-text text-muted">A categoria ajuda a organizar os pratos no cardápio</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="descricao" class="form-label">Descrição
+                        <span tabindex="0" data-toggle="popover" data-trigger="focus" title="Descrição do Prato" data-content="Descreva os principais ingredientes e características do prato">
+                            <i class="fas fa-question-circle text-info" style="cursor:pointer;"></i>
+                        </span>
+                    </label>
+                    <textarea class="form-control" id="descricao" name="descricao" rows="3"></textarea>
+                    <small class="form-text text-muted">Ex: Filé mignon grelhado ao molho madeira, acompanhado de arroz e legumes</small>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="rendimento" class="form-label">Rendimento Total
+                                <span tabindex="0" data-toggle="popover" data-trigger="focus" title="O que é Rendimento?" data-content="Informe a quantidade total que a receita irá produzir. Exemplo: se a receita rende 15kg, coloque 15. Se for 20 porções, coloque 20 e selecione a unidade correspondente.">
+                                    <i class="fas fa-question-circle text-info" style="cursor:pointer;"></i>
+                                </span>
+                            </label>
+                            <input type="number" class="form-control" id="rendimento" name="rendimento" step="0.01" required>
+                            <small class="form-text text-muted">Ex: 15 para 15kg, 20 para 20 porções</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="unidade_rendimento" class="form-label">Unidade
+                                <span tabindex="0" data-toggle="popover" data-trigger="focus" title="Unidade de Medida" data-content="Selecione a unidade de medida do rendimento. Use 'un' para porções">
+                                    <i class="fas fa-question-circle text-info" style="cursor:pointer;"></i>
+                                </span>
+                            </label>
+                            <select class="form-control" id="unidade_rendimento" name="unidade_rendimento" required>
+                                <option value="">Selecione...</option>
+                                <option value="kg">Quilograma (kg)</option>
+                                <option value="g">Grama (g)</option>
+                                <option value="l">Litro (L)</option>
+                                <option value="ml">Mililitro (ml)</option>
+                                <option value="un">Unidade (un)</option>
+                            </select>
+                            <small class="form-text text-muted">Selecione a unidade de medida do rendimento</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="porcoes_rendimento" class="form-label">Porções por Rendimento
+                                <span tabindex="0" data-toggle="popover" data-trigger="focus" title="Porções" data-content="Quantas porções este rendimento produz? Ex: se 15kg rende 30 porções, coloque 30">
+                                    <i class="fas fa-question-circle text-info" style="cursor:pointer;"></i>
+                                </span>
+                            </label>
+                            <input type="number" class="form-control" id="porcoes_rendimento" name="porcoes_rendimento" required>
+                            <small class="form-text text-muted">Ex: 30 porções para 15kg</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="tempo_preparo" class="form-label">Tempo de Preparo (min)
+                                <span tabindex="0" data-toggle="popover" data-trigger="focus" title="Tempo de Preparo" data-content="Tempo estimado para preparar o prato, em minutos">
+                                    <i class="fas fa-question-circle text-info" style="cursor:pointer;"></i>
+                                </span>
+                            </label>
+                            <input type="number" class="form-control" id="tempo_preparo" name="tempo_preparo">
+                            <small class="form-text text-muted">Ex: 45 para 45 minutos</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="margem" class="form-label">Margem de Lucro (%)
+                        <span tabindex="0" data-toggle="popover" data-trigger="focus" title="Margem de Lucro" data-content="Percentual de lucro desejado sobre o custo total do prato">
+                            <i class="fas fa-question-circle text-info" style="cursor:pointer;"></i>
+                        </span>
+                    </label>
+                    <input type="number" class="form-control" id="margem" name="margem" value="30" step="0.01">
+                    <small class="form-text text-muted">Ex: 30 para 30% de margem de lucro</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="ingrediente" class="form-label">Ingredientes
+                        <span tabindex="0" data-toggle="popover" data-trigger="focus" title="Ingredientes" data-content="Digite o nome do ingrediente e selecione da lista de sugestões. Você pode adicionar vários ingredientes">
+                            <i class="fas fa-question-circle text-info" style="cursor:pointer;"></i>
+                        </span>
+                    </label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="ingrediente" placeholder="Digite o nome do ingrediente...">
+                        <button type="button" class="btn btn-primary" id="btnAdicionarIngrediente">
+                            <i class="fas fa-plus"></i> Adicionar
+                        </button>
+                    </div>
+                    <small class="form-text text-muted">Digite o nome do ingrediente e selecione da lista de sugestões</small>
+                    <ul id="sugestoes" class="list-group mt-2"></ul>
+                </div>
+
+                <div class="mb-3">
+                    <h6>Ingredientes Adicionados</h6>
+                    <div id="listaIngredientes" class="list-group">
+                        <!-- Lista de ingredientes será preenchida via JavaScript -->
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Resumo da Ficha Técnica</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Ingredientes</h6>
+                                <div id="resumoIngredientes">
+                                    <p class="text-muted">Nenhum ingrediente adicionado</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Impacto no Estoque</h6>
+                                <div id="impactoEstoque">
+                                    <p class="text-muted">Adicione ingredientes para ver o impacto no estoque</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    let ingredientesAdicionados = [];
+    let resumoIngredientes = {};
+
+    // Inicializar tooltips
+    $('[data-toggle="popover"]').popover();
+
+    // Função para atualizar o resumo de ingredientes
+    function atualizarResumoIngredientes() {
+        resumoIngredientes = {};
+        ingredientesAdicionados.forEach(function(ingrediente) {
+            const quantidade = $(`input[name="quantidade_${ingrediente.id}"]`).val();
+            if (quantidade) {
+                resumoIngredientes[ingrediente.id] = {
+                    nome: ingrediente.nome,
+                    quantidade: quantidade
+                };
+            }
+        });
+        
+        // Atualizar o resumo na interface
+        const resumoHtml = Object.values(resumoIngredientes)
+            .map(ing => `<li>${ing.nome}: ${ing.quantidade}</li>`)
+            .join('');
+        
+        if (resumoHtml) {
+            $('#resumoIngredientes').html(`<ul>${resumoHtml}</ul>`);
+            verificarEstoque();
+        } else {
+            $('#resumoIngredientes').html('<p class="text-muted">Nenhum ingrediente adicionado</p>');
+            $('#impactoEstoque').html('<p class="text-muted">Adicione ingredientes para ver o impacto no estoque</p>');
+        }
+    }
+
+    // Função para verificar o estoque
+    function verificarEstoque() {
+        const ingredientesIds = Object.keys(resumoIngredientes);
+        if (ingredientesIds.length === 0) return;
+
+        $.get('/pratos/api/verificar_estoque', { 
+            ingredientes: ingredientesIds,
+            quantidades: Object.values(resumoIngredientes).map(i => i.quantidade)
+        }, function(data) {
+            let html = '<ul>';
+            let temFalta = false;
+
+            data.forEach(function(item) {
+                const status = item.estoque_suficiente ? 
+                    '<span class="text-success"><i class="fas fa-check-circle"></i> Suficiente</span>' : 
+                    '<span class="text-danger"><i class="fas fa-exclamation-circle"></i> Insuficiente</span>';
+                
+                if (!item.estoque_suficiente) temFalta = true;
+
+                html += `
+                    <li>
+                        ${item.nome}: ${item.quantidade_necessaria} ${item.unidade}
+                        <br>
+                        <small>Estoque atual: ${item.estoque_atual} ${item.unidade} - ${status}</small>
+                    </li>
+                `;
+            });
+
+            html += '</ul>';
+
+            if (temFalta) {
+                html += `
+                    <div class="alert alert-warning mt-2">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Atenção: Alguns ingredientes têm estoque insuficiente!
+                    </div>
+                `;
+            }
+
+            $('#impactoEstoque').html(html);
+        });
+    }
+
+    $('#ingrediente').on('input', function() {
+        const termo = $(this).val();
+        if (termo.length > 2) {
+            $.get('/pratos/api/sugerir_ingredientes', { termo: termo }, function(data) {
+                const sugestoes = $('#sugestoes');
+                sugestoes.empty();
+                data.forEach(function(ingrediente) {
+                    sugestoes.append(`
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            ${ingrediente.nome}
+                            <button type="button" class="btn btn-sm btn-primary adicionar-ingrediente" 
+                                    data-id="${ingrediente.id}" 
+                                    data-nome="${ingrediente.nome}">
+                                Adicionar
+                            </button>
+                        </li>
+                    `);
+                });
+            });
+        } else {
+            $('#sugestoes').empty();
+        }
+    });
+
+    $(document).on('click', '.adicionar-ingrediente', function() {
+        const id = $(this).data('id');
+        const nome = $(this).data('nome');
+        
+        if (!ingredientesAdicionados.find(i => i.id === id)) {
+            ingredientesAdicionados.push({ id, nome });
+            atualizarListaIngredientes();
+            atualizarResumoIngredientes();
+        }
+        
+        $('#ingrediente').val('');
+        $('#sugestoes').empty();
+    });
+
+    function atualizarListaIngredientes() {
+        const lista = $('#listaIngredientes');
+        lista.empty();
+        
+        ingredientesAdicionados.forEach(function(ingrediente, index) {
+            lista.append(`
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${ingrediente.nome}</strong>
+                        <input type="number" class="form-control form-control-sm d-inline-block w-25 ms-2" 
+                               name="quantidade_${ingrediente.id}" placeholder="Qtd" required
+                               onchange="atualizarResumoIngredientes()">
+                        <input type="hidden" name="ingredientes[]" value="${ingrediente.id}">
+                    </div>
+                    <button type="button" class="btn btn-sm btn-danger remover-ingrediente" data-index="${index}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `);
+        });
+    }
+
+    $(document).on('click', '.remover-ingrediente', function() {
+        const index = $(this).data('index');
+        ingredientesAdicionados.splice(index, 1);
+        atualizarListaIngredientes();
+        atualizarResumoIngredientes();
+    });
+
+    $('#formPrato').on('submit', function(e) {
+        e.preventDefault();
+        
+        if (ingredientesAdicionados.length === 0) {
+            alert('Adicione pelo menos um ingrediente!');
+            return;
+        }
+
+        // Verificar se todos os ingredientes têm quantidade
+        let todosTemQuantidade = true;
+        ingredientesAdicionados.forEach(function(ingrediente) {
+            const quantidade = $(`input[name="quantidade_${ingrediente.id}"]`).val();
+            if (!quantidade || quantidade <= 0) {
+                todosTemQuantidade = false;
+            }
+        });
+
+        if (!todosTemQuantidade) {
+            alert('Todos os ingredientes devem ter uma quantidade válida!');
+            return;
+        }
+
+        this.submit();
+    });
+});
+</script>
+{% endblock %} 
