@@ -52,3 +52,16 @@ def debug_db():
         }
     except Exception as e:
         return {"error": str(e)}
+
+@app.route('/seed-vegan')
+def seed_vegan_route():
+    try:
+        from app.scripts.seed_vegan import seed_vegan_data
+        msg = seed_vegan_data()
+        return {
+            "status": "success",
+            "message": msg,
+            "info": "Refresh the Dashboard to see data."
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
