@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes do Produto - {{ produto.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Detalhes do Produto: {{ produto.nome }}</h1>
+        <a href="{{ url_for('estoque.index') }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Detalhes do Produto -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Informações Básicas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ produto.nome }}</div>
+                            <div class="text-xs text-gray-500 mt-2">Código: {{ produto.codigo }}</div>
+                            <div class="text-xs text-gray-500">Categoria: {{ produto.categoria }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-box fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estoque Atual -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Estoque Atual
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ produto.estoque_atual }} {{ produto.unidade }}
+                            </div>
+                            <div class="text-xs text-gray-500 mt-2">
+                                Mínimo: {{ produto.estoque_minimo }} {{ produto.unidade }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-cubes fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Valor -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Valor Unitário (Médio)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                R$ {{ "%.2f"|format(produto.preco_unitario) }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Movimentações -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Histórico de Movimentações</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Quantidade</th>
+                            <th>Valor Unit.</th>
+                            <th>Referência</th>
+                            <th>Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mov in movimentacoes.items %}
+                        <tr>
+                            <td>{{ mov.data_movimentacao.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                <span class="badge badge-{{ 'success' if mov.tipo == 'entrada' else 'danger' }}">
+                                    {{ mov.tipo|upper }}
+                                </span>
+                            </td>
+                            <td>{{ mov.quantidade }}</td>
+                            <td>R$ {{ "%.2f"|format(mov.valor_unitario) }}</td>
+                            <td>{{ mov.referencia }}</td>
+                            <td>{{ mov.observacao or '-' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">Nenhuma movimentação encontrada.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if movimentacoes.pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% for page in movimentacoes.iter_pages() %}
+                    {% if page %}
+                    <li class="page-item {{ 'active' if page == movimentacoes.page else '' }}">
+                        <a class="page-link"
+                            href="{{ url_for('estoque.detalhe_produto', id=produto.id, page=page) }}">{{ page }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
