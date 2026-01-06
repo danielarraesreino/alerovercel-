@@ -4,11 +4,25 @@ from app.models.modelo_prato import Prato, PratoInsumo
 from app.models.modelo_fornecedor import Fornecedor
 from app.models.modelo_cardapio import Cardapio, CardapioSecao, CardapioItem
 from app.models.modelo_previsao import HistoricoVendas
-from faker import Faker
+# from faker import Faker
 import random
+import string
 from datetime import datetime, timedelta, date
 
-fake = Faker('pt_BR')
+# fake = Faker('pt_BR')
+
+def random_name():
+    first = ["João", "Maria", "Pedro", "Ana", "Carlos", "Lucia", "Paulo", "Fernanda"]
+    last = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Pereira", "Costa", "Almeida"]
+    return f"{random.choice(first)} {random.choice(last)}"
+
+def random_email(name):
+    clean_name = name.lower().replace(' ', '.')
+    domains = ["email.com", "teste.com", "vegan.com"]
+    return f"{clean_name}@{random.choice(domains)}"
+
+def random_phone():
+    return f"(11) 9{random.randint(10000000, 99999999)}"
 
 def seed_vegan_data():
     print("Iniciando seed de dados Veganos...")
@@ -31,12 +45,13 @@ def seed_vegan_data():
         "Zona Cerealista Atacado", "Cogumelos Mágicos Site", "Granja de Ovos (Fake) Plant Based"
     ]
     
-    for nome in nomes_fornecedores:
+    for nome_empresa in nomes_fornecedores:
+        contato = random_name()
         f = Fornecedor(
-            nome_empresa=nome,
-            nome_contato=fake.name(),
-            email=fake.email(),
-            telefone=fake.phone_number(),
+            nome_empresa=nome_empresa,
+            nome_contato=contato,
+            email=random_email(contato),
+            telefone=random_phone(),
             categoria=random.choice(['Hortifruti', 'Grãos', 'Processados', 'Temperos'])
         )
         db.session.add(f)
