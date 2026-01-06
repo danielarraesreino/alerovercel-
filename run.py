@@ -21,3 +21,25 @@ with app.app_context():
         print(f"Tables in DB: {inspector.get_table_names()}")
     except Exception as e:
         print(f"Migration failed (might be already up to date or connection issue): {e}")
+
+@app.route('/debug-db')
+def debug_db():
+    try:
+        from sqlalchemy import inspect, text
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        
+        # Check alembic version
+        try:
+            version = db.session.execute(text("SELECT * FROM alembic_version")).fetchall()
+        except:
+            version = "Table alembic_version not found"
+
+        return {
+            "status": "online",
+            "tables": tables,
+            "alembic_version": str(version),
+            "db_url_masked": app.config['SQLALCHEMY_DATABASE_URI'].split('@')[-1] if app.config['SQLALCHEMY_DATABASE_URI'] else "None"
+        }
+    except Exception as e:
+        return {"error": str(e)}
