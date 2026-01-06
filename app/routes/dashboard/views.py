@@ -33,12 +33,12 @@ def calcular_metricas_principais(data_inicio, data_fim):
         # Custo do item vendido
         if venda.cardapio_item_id:
             item = CardapioItem.query.get(venda.cardapio_item_id)
-            if item and item.preco_custo:
-                custo_total += float(item.preco_custo) * venda.quantidade
+            if item and item.prato:
+                custo_total += float(item.prato.custo_total_por_porcao or 0) * venda.quantidade
         elif venda.prato_id:
             prato = Prato.query.get(venda.prato_id)
-            if prato and prato.custo_total:
-                custo_total += float(prato.custo_total) * venda.quantidade
+            if prato:
+                custo_total += float(prato.custo_total_por_porcao or 0) * venda.quantidade
     
     # Adicionar custos indiretos do período
     custos_indiretos = CustoIndireto.query.filter(
@@ -88,12 +88,12 @@ def obter_dados_diarios(data_inicio, data_fim):
         custo_item = 0
         if venda.cardapio_item_id:
             item = CardapioItem.query.get(venda.cardapio_item_id)
-            if item and item.preco_custo:
-                custo_item = float(item.preco_custo) * venda.quantidade
+            if item and item.prato:
+                custo_item = float(item.prato.custo_total_por_porcao or 0) * venda.quantidade
         elif venda.prato_id:
             prato = Prato.query.get(venda.prato_id)
-            if prato and prato.custo_total:
-                custo_item = float(prato.custo_total) * venda.quantidade
+            if prato:
+                custo_item = float(prato.custo_total_por_porcao or 0) * venda.quantidade
         
         custos_por_dia[data_str] += custo_item
     
@@ -158,7 +158,7 @@ def obter_top_pratos(data_inicio, data_fim, limite=5):
     for p in vendas_pratos:
         prato = Prato.query.get(p.id)
         if prato:
-            custo_unitario = float(prato.custo_total or 0)
+            custo_unitario = float(prato.custo_total_por_porcao or 0)
             custo_total = custo_unitario * p.quantidade_vendida
             lucro = float(p.receita_total or 0) - custo_total
             margem = (lucro / float(p.receita_total)) * 100 if float(p.receita_total) > 0 else 0
@@ -410,7 +410,7 @@ def relatorio_pratos():
         prato = Prato.query.get(p.id)
         if prato:
             # Custos diretos
-            custo_unitario = float(prato.custo_total or 0)
+            custo_unitario = float(prato.custo_total_por_porcao or 0)
             custo_direto_total = custo_unitario * p.quantidade_vendida
             
             # Estimar custos indiretos 
@@ -561,9 +561,9 @@ def relatorio_categorias():
             ).all()
             
             # Calcular custo
-            if item.preco_custo:
+            if item.prato:
                 for venda in vendas_item:
-                    custo_total += float(item.preco_custo) * venda.quantidade
+                    custo_total += float(item.prato.custo_total_por_porcao or 0) * venda.quantidade
         
         # Adicionar aos dados por categoria
         categorias_dados[f'Seção: {secao.nome}'] = {
@@ -593,9 +593,9 @@ def relatorio_categorias():
             ).all()
             
             # Calcular custo
-            if prato.custo_total:
+            if prato:
                 for venda in vendas_prato:
-                    custo_total += float(prato.custo_total) * venda.quantidade
+                    custo_total += float(prato.custo_total_por_porcao or 0) * venda.quantidade
         
         # Adicionar aos dados por categoria
         if nome_categoria not in categorias_dados:
