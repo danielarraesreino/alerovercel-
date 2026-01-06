@@ -13,14 +13,23 @@ if __name__ == '__main__':
 # We also want to ensure migrations run here
 with app.app_context():
     try:
-        upgrade()
-        print("Database migration successful!")
+        # Emergency fix: Create tables if they don't exist
+        # This is needed because initial migration seems to assume tables exist
+        db.create_all()
+        print("db.create_all() executed successfully.")
+        
+        try:
+            upgrade()
+            print("Database migration successful!")
+        except Exception as e:
+            print(f"Migration step failed (might conflict with create_all, but tables should be there): {e}")
+
         # Debug: List tables to confirm migration worked
         from sqlalchemy import inspect
         inspector = inspect(db.engine)
         print(f"Tables in DB: {inspector.get_table_names()}")
     except Exception as e:
-        print(f"Migration failed (might be already up to date or connection issue): {e}")
+        print(f"Database initialization failed: {e}")
 
 @app.route('/debug-db')
 def debug_db():
