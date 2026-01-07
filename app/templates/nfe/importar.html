@@ -5,120 +5,38 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Importar Nota Fiscal Eletrônica</h2>
-    
+
     <div class="card mt-4">
         <div class="card-body">
-            <form id="nfeForm" enctype="multipart/form-data">
+            <!-- Standard form submission compatible with Flask backend -->
+            <form id="nfeForm" method="POST" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="xmlFile" class="form-label">Arquivo XML da NFe</label>
-                    <input type="file" class="form-control" id="xmlFile" accept=".xml" required>
+                    <input type="file" class="form-control" id="xmlFile" name="xml_file" accept=".xml" required>
+                    <small class="form-text text-muted">Selecione o arquivo XML da Nota Fiscal Eletrônica
+                        (NF-e).</small>
                 </div>
-                <button type="submit" class="btn btn-primary">Importar</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-file-upload"></i> Importar
+                </button>
             </form>
         </div>
     </div>
-    
-    <div id="resultado" class="mt-4" style="display: none;">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Resultado da Importação</h5>
-            </div>
-            <div class="card-body">
-                <div id="mensagens"></div>
-                <div id="detalhesNota" class="mt-3" style="display: none;">
-                    <h6>Detalhes da Nota</h6>
-                    <table class="table table-sm">
-                        <tr>
-                            <th>Número:</th>
-                            <td id="numeroNota"></td>
-                        </tr>
-                        <tr>
-                            <th>Série:</th>
-                            <td id="serieNota"></td>
-                        </tr>
-                        <tr>
-                            <th>Data de Emissão:</th>
-                            <td id="dataEmissao"></td>
-                        </tr>
-                        <tr>
-                            <th>Valor Total:</th>
-                            <td id="valorTotal"></td>
-                        </tr>
-                        <tr>
-                            <th>Fornecedor:</th>
-                            <td id="fornecedor"></td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
+
+    <!-- Instructions -->
+    <div class="card mt-4 border-left-info shadow">
+        <div class="card-body">
+            <h5 class="card-title text-info"><i class="fas fa-info-circle"></i> Como funciona</h5>
+            <p>
+                Ao importar um arquivo XML:
+            </p>
+            <ul>
+                <li>O sistema lerá os dados da nota fiscal (número, série, data, totais).</li>
+                <li>Verificará se o fornecedor já existe (pelo CNPJ) e o criará se necessário.</li>
+                <li>Verificará cada produto pelo código. Se não existir, será cadastrado automaticamente.</li>
+                <li>O estoque dos produtos será atualizado automaticamente com as quantidades da nota.</li>
+            </ul>
         </div>
     </div>
 </div>
-
-<script>
-document.getElementById('nfeForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const fileInput = document.getElementById('xmlFile');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        alert('Por favor, selecione um arquivo XML');
-        return;
-    }
-    
-    try {
-        const xmlContent = await file.text();
-        
-        const response = await fetch('/nfe/importar', {
-            method: 'POST',
-            body: xmlContent,
-            headers: {
-                'Content-Type': 'application/xml'
-            }
-        });
-        
-        const data = await response.json();
-        
-        // Mostra o resultado
-        document.getElementById('resultado').style.display = 'block';
-        const mensagensDiv = document.getElementById('mensagens');
-        mensagensDiv.innerHTML = '';
-        
-        if (data.success) {
-            // Mostra as mensagens
-            data.mensagens.forEach(msg => {
-                const alert = document.createElement('div');
-                alert.className = 'alert alert-success';
-                alert.textContent = msg;
-                mensagensDiv.appendChild(alert);
-            });
-            
-            // Mostra os detalhes da nota
-            document.getElementById('detalhesNota').style.display = 'block';
-            document.getElementById('numeroNota').textContent = data.nota.numero;
-            document.getElementById('serieNota').textContent = data.nota.serie;
-            document.getElementById('dataEmissao').textContent = new Date(data.nota.data_emissao).toLocaleDateString();
-            document.getElementById('valorTotal').textContent = new Intl.NumberFormat('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-            }).format(data.nota.valor_total);
-            document.getElementById('fornecedor').textContent = data.nota.fornecedor;
-            
-            // Limpa o formulário
-            fileInput.value = '';
-            
-        } else {
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-danger';
-            alert.textContent = data.error;
-            mensagensDiv.appendChild(alert);
-        }
-        
-    } catch (error) {
-        console.error('Erro:', error);
-        alert('Erro ao processar o arquivo XML');
-    }
-});
-</script>
-{% endblock %} 
+{% endblock %}
