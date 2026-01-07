@@ -20,7 +20,10 @@ def index():
     ordenar_por = request.args.get('ordenar_por', 'nome')
     
     # Construir query base
-    query = Prato.query
+    from sqlalchemy.orm import joinedload
+    query = Prato.query.options(
+        joinedload(Prato.insumos).joinedload(PratoInsumo.produto)
+    )
     
     # Aplicar filtros
     if categoria:
@@ -59,6 +62,7 @@ def index():
         paginacao = query.paginate(page=page, per_page=20, error_out=False)
     
     # Obter lista de categorias para filtro
+    # Usa query separada limpa (sem joins desnecessários) para categorias
     categorias = db.session.query(Prato.categoria).distinct().all()
     categorias = [c[0] for c in categorias if c[0]]
     

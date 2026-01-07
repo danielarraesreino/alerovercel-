@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Nota Fiscal {{ nota.numero }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Nota Fiscal: {{ nota.numero }} / {{ nota.serie }}</h1>
+        <p class="text-muted">Chave: {{ nota.chave_acesso }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('nfe.index') }}" class="btn btn-secondary">Voltar (Lista)</a>
+    </div>
+</div>
+
+<!-- Detalhes da Nota e Fornecedor -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">Dados da Emissão</div>
+            <div class="card-body">
+                <p><strong>Data de Emissão:</strong> {{ nota.data_emissao.strftime('%d/%m/%Y') }}</p>
+                <p><strong>Valor Produtos:</strong> R$ {{ "%.2f"|format(nota.valor_produtos) }}</p>
+                <p><strong>Valor Frete:</strong> R$ {{ "%.2f"|format(nota.valor_frete or 0) }}</p>
+                <p><strong>Valor Total:</strong> <span class="h5 text-success">R$ {{ "%.2f"|format(nota.valor_total)
+                        }}</span></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-white">Fornecedor</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ nota.fornecedor.razao_social }}</h5>
+                <p><strong>CNPJ:</strong> {{ nota.fornecedor.cnpj }}</p>
+                <p>{{ nota.fornecedor.cidade }} - {{ nota.fornecedor.estado }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Itens da Nota -->
+<div class="card shadow-sm">
+    <div class="card-header">Itens da Nota</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Código</th>
+                        <th>Produto</th>
+                        <th>Unidade</th>
+                        <th>Qtd</th>
+                        <th>Vlr Unit.</th>
+                        <th>Total</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in nota.itens %}
+                    <tr>
+                        <td>{{ item.num_item }}</td>
+                        <td>{{ item.produto.codigo }}</td>
+                        <td>{{ item.produto.nome }}</td>
+                        <td>{{ item.unidade_medida }}</td>
+                        <td>{{ item.quantidade }}</td>
+                        <td>R$ {{ "%.2f"|format(item.valor_unitario) }}</td>
+                        <td>R$ {{ "%.2f"|format(item.valor_total) }}</td>
+                        <td>
+                            <a href="{{ url_for('nfe.visualizar_item', id=item.id) }}"
+                                class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-search"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -219,53 +219,111 @@ def obter_distribuicao_categorias(data_inicio, data_fim):
 
 
 def obter_tendencia_lucratividade(meses=6):
-    """Obtém a tendência de lucratividade dos últimos meses"""
+    """Obtém a tendência de lucratividade dos últimos meses de forma otimizada"""
     hoje = date.today()
+    inicio_periodo = (hoje.replace(day=1) - timedelta(days=meses*30)).replace(day=1) # Aprox
+    
+    # Ajuste preciso para obter exatamente X meses atrás a partir do dia 1
+    mes_atual = hoje.month
+    ano_atual = hoje.year
+    for _ in range(meses):
+        mes_atual -= 1
+        if mes_atual == 0:
+            mes_atual = 12
+            ano_atual -= 1
+    inicio_periodo = date(ano_atual, mes_atual, 1)
+
+    # Consulta única agregada por mês
+    resultados = db.session.query(
+        func.strftime('%Y-%m', HistoricoVendas.data).label('mes_ano'),
+        func.sum(HistoricoVendas.valor_total).label('receita'),
+        func.sum(case([(CardapioItem.id != None, 
+                        expression.cast(Prato.custo_total_por_porcao, Float) * HistoricoVendas.quantidade)], 
+                      else_=0)).label('custo_pratos_via_itens'),
+         # Nota: Esta query simplificada foca em receita. O cálculo exato de custo histórico requer snapshots.
+         # Para performance, vamos usar uma aproximação baseada na receita e custo atual 
+         # OU fazer a query correta se os dados permitirem.
+         # Dado o schema atual, o loop anterior recalculava tudo.
+         # Vamos manter a lógica original mas otimizar fazendo queries mensais diretas em vez de chamar 'calcular_metricas_principais' que carrega objetos.
+    ).filter(
+        HistoricoVendas.data >= inicio_periodo
+    ).group_by(
+        func.strftime('%Y-%m', HistoricoVendas.data)
+    ).all()
+
+    # Reimplementação OTIMIZADA mantendo a precisão da lógica original, mas sem N+1
+    # Vamos iterar os meses, mas fazendo queries de soma direta no banco.
+    
     dados_mensais = []
     
-    # Calcular para cada mês
     for i in range(meses - 1, -1, -1):
-        # Calcular o mês de referência (mês atual - i)
+        # Calcular período do mês específico
         mes_ref = hoje.month - i
         ano_ref = hoje.year
-        
-        # Ajustar para meses anteriores
         while mes_ref <= 0:
             mes_ref += 12
             ano_ref -= 1
         
-        # Definir período
-        data_inicio = date(ano_ref, mes_ref, 1)
+        data_inicio_mes = date(ano_ref, mes_ref, 1)
         if mes_ref == 12:
-            data_fim = date(ano_ref + 1, 1, 1) - timedelta(days=1)
+            data_fim_mes = date(ano_ref + 1, 1, 1) - timedelta(days=1)
         else:
-            data_fim = date(ano_ref, mes_ref + 1, 1) - timedelta(days=1)
-        
-        # Calcular métricas
-        receita, custo, lucro, margem = calcular_metricas_principais(data_inicio, data_fim)
-        
-        # Adicionar aos dados mensais
+            data_fim_mes = date(ano_ref, mes_ref + 1, 1) - timedelta(days=1)
+            
+        # Query de Receita (Soma Direta)
+        receita = db.session.query(func.sum(HistoricoVendas.valor_total)).filter(
+            HistoricoVendas.data >= data_inicio_mes,
+            HistoricoVendas.data <= data_fim_mes
+        ).scalar() or 0.0
+
+        # Query de Custo (Soma Direta com Join) - Aproximação usando custo atual do prato
+        # Isso evita carregar milhares de objetos HistoricoVendas para memória python
+        # Custo via CardapioItem
+        custo_via_itens = db.session.query(
+            func.sum(Prato.custo_total_por_porcao * HistoricoVendas.quantidade)
+        ).join(CardapioItem, HistoricoVendas.cardapio_item_id == CardapioItem.id)\
+         .join(Prato, CardapioItem.prato_id == Prato.id)\
+         .filter(
+            HistoricoVendas.data >= data_inicio_mes,
+            HistoricoVendas.data <= data_fim_mes
+        ).scalar() or 0.0
+
+        # Custo via Prato Direto
+        custo_via_pratos = db.session.query(
+            func.sum(Prato.custo_total_por_porcao * HistoricoVendas.quantidade)
+        ).join(Prato, HistoricoVendas.prato_id == Prato.id)\
+         .filter(
+            HistoricoVendas.data >= data_inicio_mes,
+            HistoricoVendas.data <= data_fim_mes,
+            HistoricoVendas.cardapio_item_id == None
+        ).scalar() or 0.0
+
+        # Custos Indiretos
+        custo_indireto = db.session.query(func.sum(CustoIndireto.valor)).filter(
+            CustoIndireto.data_referencia >= data_inicio_mes,
+            CustoIndireto.data_referencia <= data_fim_mes
+        ).scalar() or 0.0
+
+        custo_total = float(custo_via_itens) + float(custo_via_pratos) + float(custo_indireto)
+        receita = float(receita)
+        lucro = receita - custo_total
+        margem = (lucro / receita * 100) if receita > 0 else 0
+
         dados_mensais.append({
             'mes': calendar.month_name[mes_ref],
             'receita': receita,
-            'custo': custo,
+            'custo': custo_total,
             'lucro': lucro,
             'margem': margem
         })
-    
+
     # Preparar dados para o gráfico
-    meses = [d['mes'] for d in dados_mensais]
-    receitas = [d['receita'] for d in dados_mensais]
-    custos = [d['custo'] for d in dados_mensais]
-    lucros = [d['lucro'] for d in dados_mensais]
-    margens = [d['margem'] for d in dados_mensais]
-    
     return {
-        'meses': meses,
-        'receitas': receitas,
-        'custos': custos,
-        'lucros': lucros,
-        'margens': margens
+        'meses': [d['mes'] for d in dados_mensais],
+        'receitas': [d['receita'] for d in dados_mensais],
+        'custos': [d['custo'] for d in dados_mensais],
+        'lucros': [d['lucro'] for d in dados_mensais],
+        'margens': [d['margem'] for d in dados_mensais]
     }
 
 
@@ -372,7 +430,7 @@ def index():
 
 @bp.route('/relatorio/pratos')
 def relatorio_pratos():
-    """Relatório detalhado de lucratividade por prato"""
+    """Relatório detalhado de lucratividade por prato - OTIMIZADO"""
     # Obter período para análise
     hoje = date.today()
     data_inicio = request.args.get('data_inicio', (hoje - timedelta(days=30)).strftime('%Y-%m-%d'))
@@ -385,11 +443,12 @@ def relatorio_pratos():
         inicio_periodo = hoje - timedelta(days=30)
         fim_periodo = hoje
         
-    # Consultar todos os pratos com vendas no período
+    # Consultar vendas agregadas por prato
     vendas_pratos = db.session.query(
         Prato.id,
         Prato.nome,
         Prato.categoria,
+        Prato.custo_total_por_porcao, # Assumindo que isso pode ser obtido ou deve ser pré-carregado
         func.sum(HistoricoVendas.quantidade).label('quantidade_vendida'),
         func.sum(HistoricoVendas.valor_total).label('receita_total')
     ).join(
@@ -404,26 +463,53 @@ def relatorio_pratos():
         func.sum(HistoricoVendas.valor_total).desc()
     ).all()
     
-    # Preparar dados detalhados para cada prato
+    # Pré-cálculo de totais gerais para rateio (Query única)
+    totais_periodo = db.session.query(
+        func.sum(HistoricoVendas.valor_total).label('receita_total')
+    ).filter(
+        HistoricoVendas.data >= inicio_periodo, 
+        HistoricoVendas.data <= fim_periodo
+    ).first()
+    
+    receita_total_periodo = float(totais_periodo.receita_total or 0)
+
+    # Pré-cálculo de custos indiretos totais (Query única)
+    total_indiretos = db.session.query(func.sum(CustoIndireto.valor)).filter(
+        CustoIndireto.data_referencia >= inicio_periodo,
+        CustoIndireto.data_referencia <= fim_periodo
+    ).scalar() or 0.0
+    
+    # Preparar dados detalhados
     pratos_detalhes = []
+    
+    # Eager loading para evitar N+1 no acesso a prato.custo_total_por_porcao
+    # Se custo_total_por_porcao for uma property que faz queries, precisamos otimizar ela ou aceitar que ela é lenta.
+    # Assumindo que o loop itera sobre resultados da query acima, 'p' é um Row, não um objeto Prato completo com relacionamentos carregados.
+    # Mas precisamos do custo. Vamos carregar os objetos Prato necessários em batch se necessário, ou confiar que a property é rapida.
+    # PROBLEMA: custo_total_por_porcao acessa insumos. Se iterarmos 100 pratos, faremos 100 queries de insumos.
+    # SOLUÇÃO: Carregar pratos com insumos e produtos.
+    
+    prato_ids = [p.id for p in vendas_pratos]
+    if prato_ids:
+        from sqlalchemy.orm import joinedload
+        # Carregar pratos com seus insumos e produtos dos insumos em UMA query
+        objetos_pratos = {prato.id: prato for prato in Prato.query.options(
+            joinedload(Prato.insumos).joinedload(PratoInsumo.produto)
+        ).filter(Prato.id.in_(prato_ids)).all()}
+    else:
+        objetos_pratos = {}
+
     for p in vendas_pratos:
-        prato = Prato.query.get(p.id)
-        if prato:
-            # Custos diretos
-            custo_unitario = float(prato.custo_total_por_porcao or 0)
+        prato_obj = objetos_pratos.get(p.id)
+        
+        if prato_obj:
+            # Custos diretos (agora rápido devido ao eager loading)
+            custo_unitario = float(prato_obj.custo_total_por_porcao or 0)
             custo_direto_total = custo_unitario * p.quantidade_vendida
             
-            # Estimar custos indiretos 
-            # (baseado na proporção das vendas deste prato em relação ao total)
-            receita_total_periodo, _, _, _ = calcular_metricas_principais(inicio_periodo, fim_periodo)
+            # Rateio de custos indiretos
             proporcao_receita = float(p.receita_total) / receita_total_periodo if receita_total_periodo > 0 else 0
-            
-            custos_indiretos = CustoIndireto.query.filter(
-                CustoIndireto.data_referencia >= inicio_periodo,
-                CustoIndireto.data_referencia <= fim_periodo
-            ).all()
-            total_indiretos = sum(float(c.valor or 0) for c in custos_indiretos)
-            custo_indireto_estimado = total_indiretos * proporcao_receita
+            custo_indireto_estimado = float(total_indiretos) * proporcao_receita
             
             # Cálculos finais
             custo_total = custo_direto_total + custo_indireto_estimado
@@ -448,11 +534,11 @@ def relatorio_pratos():
     # Ordenar por margem de lucro (do maior para o menor)
     pratos_detalhes.sort(key=lambda x: x['margem'], reverse=True)
     
-    # Calcular totais gerais
-    total_receita = sum(p['receita_total'] for p in pratos_detalhes)
-    total_custo = sum(p['custo_total'] for p in pratos_detalhes)
-    total_lucro = total_receita - total_custo
-    margem_media_geral = (total_lucro / total_receita * 100) if total_receita > 0 else 0
+    # Calcular totais gerais finais para display
+    total_receita_display = sum(p['receita_total'] for p in pratos_detalhes)
+    total_custo_display = sum(p['custo_total'] for p in pratos_detalhes)
+    total_lucro_display = total_receita_display - total_custo_display
+    margem_media_geral = (total_lucro_display / total_receita_display * 100) if total_receita_display > 0 else 0
     
     # Agrupar por categoria
     categorias = {}
@@ -471,25 +557,22 @@ def relatorio_pratos():
         categorias[categoria]['lucro'] += prato['lucro']
         categorias[categoria]['pratos'].append(prato)
     
-    # Calcular margens por categoria
+    # Calcular margens por categoria e preparar lista
+    categorias_ordenadas = []
     for cat, dados in categorias.items():
         dados['margem'] = (dados['lucro'] / dados['receita'] * 100) if dados['receita'] > 0 else 0
-    
-    # Ordenar categorias por margem
-    categorias_ordenadas = sorted(
-        [(cat, dados) for cat, dados in categorias.items()],
-        key=lambda x: x[1]['margem'],
-        reverse=True
-    )
+        categorias_ordenadas.append((cat, dados))
+        
+    categorias_ordenadas.sort(key=lambda x: x[1]['margem'], reverse=True)
     
     return render_template('dashboard/relatorio_pratos.html',
                           data_inicio=inicio_periodo.strftime('%Y-%m-%d'),
                           data_fim=fim_periodo.strftime('%Y-%m-%d'),
                           pratos=pratos_detalhes,
                           categorias=categorias_ordenadas,
-                          total_receita=total_receita,
-                          total_custo=total_custo,
-                          total_lucro=total_lucro,
+                          total_receita=total_receita_display,
+                          total_custo=total_custo_display,
+                          total_lucro=total_lucro_display,
                           margem_media=margem_media_geral)
 
 

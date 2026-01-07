@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}AleroPrice - Notas Fiscais{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h1>Notas Fiscais</h1>
+        <p class="text-muted">Gerencie as notas fiscais importadas e o estoque.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('nfe.importar') }}" class="btn btn-success">
+            <i class="fas fa-file-import"></i> Importar XML
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="fornecedor_id" class="form-label">Fornecedor</label>
+                <select class="form-select" id="fornecedor_id" name="fornecedor_id">
+                    <option value="">Todos</option>
+                    {% for f in fornecedores %}
+                    <option value="{{ f.id }}" {% if request.args.get('fornecedor_id')|int==f.id %}selected{% endif %}>
+                        {{ f.razao_social }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="data_inicio" class="form-label">De</label>
+                <input type="date" class="form-control" id="data_inicio" name="data_inicio"
+                    value="{{ request.args.get('data_inicio', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label for="data_fim" class="form-label">Até</label>
+                <input type="date" class="form-control" id="data_fim" name="data_fim"
+                    value="{{ request.args.get('data_fim', '') }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabela de Notas -->
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Número/Série</th>
+                        <th>Emissão</th>
+                        <th>Fornecedor</th>
+                        <th>Valor Total</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for nota in notas.items %}
+                    <tr>
+                        <td>{{ nota.numero }} / {{ nota.serie }}</td>
+                        <td>{{ nota.data_emissao.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ nota.fornecedor.razao_social }}</td>
+                        <td>R$ {{ "%.2f"|format(nota.valor_total) }}</td>
+                        <td>
+                            <a href="{{ url_for('nfe.visualizar', id=nota.id) }}" class="btn btn-sm btn-info"
+                                title="Ver Detalhes">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>Nenhuma nota fiscal encontrada.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação -->
+        {% if notas.pages > 1 %}
+        <nav aria-label="Navegação" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if notas.has_prev %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="{{ url_for('nfe.index', page=notas.prev_num, **request.args) }}">Anterior</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                {% endif %}
+
+                {% for page_num in notas.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+                {% if page_num %}
+                {% if notas.page == page_num %}
+                <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link"
+                        href="{{ url_for('nfe.index', page=page_num, **request.args) }}">{{ page_num }}</a></li>
+                {% endif %}
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+                {% endfor %}
+
+                {% if notas.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="{{ url_for('nfe.index', page=notas.next_num, **request.args) }}">Próxima</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Próxima</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

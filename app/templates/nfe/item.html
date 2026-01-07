@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhe do Item - NF-e{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Detalhes do Item</h2>
+            <p class="text-muted">Produto: {{ item.produto.nome }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('nfe.visualizar', id=item.nf_nota_id) }}" class="btn btn-secondary">
+                Voltar para Nota
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">Informações do Produto</div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Código:</th>
+                            <td>{{ item.produto.codigo }}</td>
+                        </tr>
+                        <tr>
+                            <th>Descrição:</th>
+                            <td>{{ item.produto.nome }}</td>
+                        </tr>
+                        <tr>
+                            <th>NCM:</th>
+                            <td>{{ item.ncm or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>CFOP:</th>
+                            <td>{{ item.cfop or '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">Valores Fiscais</div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Quantidade:</th>
+                            <td>{{ item.quantidade }} {{ item.unidade_medida }}</td>
+                        </tr>
+                        <tr>
+                            <th>Valor Unitário:</th>
+                            <td>R$ {{ "%.4f"|format(item.valor_unitario) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Valor Total:</th>
+                            <td>R$ {{ "%.2f"|format(item.valor_total) }}</td>
+                        </tr>
+                        <tr>
+                            <th class="text-muted border-top pt-2">ICMS:</th>
+                            <td class="border-top pt-2">R$ {{ "%.2f"|format(item.valor_icms or 0) }} ({{
+                                item.percentual_icms or 0 }}%)</td>
+                        </tr>
+                        <tr>
+                            <th class="text-muted">IPI:</th>
+                            <td>R$ {{ "%.2f"|format(item.valor_ipi or 0) }} ({{ item.percentual_ipi or 0 }}%)</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
