@@ -1,0 +1,115 @@
+from flask import render_template, redirect, url_for, flash, request
+from app.extensions import db
+from app.models.modelo_custo import CustoIndireto
+from app.routes.custos import bp
+from datetime import date, datetime, timedelta
+from dateutil.relativedelta import relativedelta
+from app.models.modelo_prato import Prato
+from app.models.modelo_estoque import EstoqueMovimentacao # Para estimar vendas se precisar
+
+@bp.route('/')
+@bp.route('/index')
+def index():
+    """Lista custos indiretos"""
+    mes = request.args.get('mes', date.today().month, type=int)
+    ano = request.args.get('ano', date.today().year, type=int)
+    tipo = request.args.get('tipo', '')
+    
+    data_inicio = date(ano, mes, 1)
+    if mes == 12:
+        data_fim = date(ano + 1, 1, 1) - timedelta(days=1)
+    else:
+        data_fim = date(ano, mes + 1, 1) - timedelta(days=1)
+    
+    query = CustoIndireto.query.filter(
+        CustoIndireto.data_referencia >= data_inicio,
+        CustoIndireto.data_referencia <= data_fim
+    )
+    
+    if tipo:
+        query = query.filter_by(tipo=tipo)
+        
+    custos = query.all()
+    total = sum(float(c.valor) for c in custos)
+    
+    return render_template('custos/index.html', 
+                          custos=custos, 
+                          total=total,
+                          mes=mes,
+                          ano=ano,
+                          tipo=tipo)
+
+@bp.route('/criar', methods=['GET', 'POST'])
+def criar():
+    """Cria novo custo"""
+    if request.method == 'POST':
+        descricao = request.form.get('descricao')
+        valor = request.form.get('valor', type=float)
+        data_ref_str = request.form.get('data_referencia')
+        tipo = request.form.get('tipo')
+        recorrente = 'recorrente' in request.form
+        parcelas = request.form.get('parcelas', type=int, default=1)
+        
+        if not descricao or not valor or not data_ref_str:
+            flash('Campos obrigatórios faltando!', 'danger')
+            return redirect(url_for('custos.criar'))
+            
+        data_ref = datetime.strptime(data_ref_str, '%Y-%m-%d').date()
+        
+        # Se for investimento parcelado
+        if parcelas > 1:
+            valor_parcela = valor / parcelas
+            for i in range(parcelas):
+                data_p = data_ref + relativedelta(months=i)
+                novo = CustoIndireto(
+                    descricao=f"{descricao} ({i+1}/{parcelas})",
+                    valor=valor_parcela,
+                    data_referencia=data_p,
+                    tipo=tipo,
+                    recorrente=False,
+                    observacao=f"Parcela de investimento. Total: {valor}"
+                )
+                db.session.add(novo)
+        else:
+            custo = CustoIndireto(
+                descricao=descricao,
+                valor=valor,
+                data_referencia=data_ref,
+                tipo=tipo,
+                recorrente=recorrente
+            )
+            db.session.add(custo)
+            
+        db.session.commit()
+        flash('Custo adicionado com sucesso!', 'success')
+        return redirect(url_for('custos.index'))
+        
+    return render_template('custos/criar.html', hoje=date.today())
+
+@bp.route('/excluir/<int:id>')
+def excluir(id):
+    custo = CustoIndireto.query.get_or_404(id)
+    db.session.delete(custo)
+    db.session.commit()
+    flash('Custo removido.', 'success')
+    return redirect(url_for('custos.index'))
+
+@bp.route('/rateio', methods=['GET', 'POST'])
+def rateio():
+    """Calcula e aplica rateio aos pratos"""
+    if request.method == 'POST':
+        mes = request.form.get('mes', type=int)
+        ano = request.form.get('ano', type=int)
+        vendas_estimadas = request.form.get('vendas_estimadas', type=int)
+        
+        if not vendas_estimadas or vendas_estimadas <= 0:
+            flash('Vendas estimadas inválidas.', 'danger')
+            return redirect(url_for('custos.rateio'))
+            
+        data_base = date(ano, mes, 1)
+        qtd, valor_por_prato = CustoIndireto.atualizar_rateio_pratos(data_base, vendas_estimadas)
+        
+        flash(f'Rateio aplicado! Valor adicionado por prato: R$ {valor_por_prato:.2f}', 'success')
+        return redirect(url_for('pratos.index'))
+        
+    return render_template('custos/rateio.html', hoje=date.today())

@@ -156,23 +156,68 @@ def processar_xml_nfe(xml_content):
     """Processa o XML da NF-e e retorna um modelo validado"""
     try:
         # Converter XML para dicionário
-        xml_dict = xmltodict.parse(xml_content)
+        # process_namespaces=True remove namespaces dos nomes das tags para facilitar acesso
+        xml_dict = xmltodict.parse(xml_content, process_namespaces=True)
         
-        # Extrair os dados principais da NF-e
-        nfe = xml_dict['nfeProc']['NFe']['infNFe']
+        # Encontrar a raiz NFe, lidando com nfeProc (distribuição) ou NFe (apenas nota)
+        nfe_data = None
+        
+        # Tentar encontrar NFe dentro de nfeProc
+        if 'nfeProc' in xml_dict:
+            if 'NFe' in xml_dict['nfeProc']:
+                nfe_data = xml_dict['nfeProc']['NFe']
+            else:
+                # Caso estranho onde nfeProc não tem NFe diretameente?
+                pass
+        elif 'NFe' in xml_dict:
+             nfe_data = xml_dict['NFe']
+             
+        if not nfe_data or 'infNFe' not in nfe_data:
+            # Tentar busca profunda ou chaves com namespace se process_namespaces=False
+            # Mas assumindo True, chaves devem estar limpas.
+            # Fallback: iterar chaves raízes
+            for key in xml_dict:
+                if key.lower().endswith('nfeproc'):
+                    if 'NFe' in xml_dict[key]:
+                        nfe_data = xml_dict[key]['NFe']
+                        break
+                elif key.lower() == 'nfe':
+                    nfe_data = xml_dict[key]
+                    break
+        
+        if not nfe_data or 'infNFe' not in nfe_data:
+            raise ValueError("Estrutura da NF-e inválida: Tag 'infNFe' não encontrada.")
+            
+        inf_nfe = nfe_data['infNFe']
         
         # Extrair chave de acesso
-        chave_acesso = xml_dict['nfeProc']['protNFe']['infProt']['chNFe']
+        chave_acesso = None
+        if 'nfeProc' in xml_dict and 'protNFe' in xml_dict['nfeProc']:
+            prot = xml_dict['nfeProc']['protNFe']['infProt']
+            chave_acesso = prot.get('chNFe')
+        else:
+            # Tentar extrair do attributo Id da infNFe
+            chave_id = inf_nfe.get('@Id', '')
+            if chave_id.startswith('NFe'):
+                chave_acesso = chave_id[3:]
+                
+        if not chave_acesso:
+            # Fallback final
+            chave_acesso = "DESCONHECID_" + datetime.now().strftime('%Y%m%d%H%M%S')
         
         # Informações da Nota
-        ide = nfe['ide']
+        ide = inf_nfe['ide']
         numero = ide['nNF']
         serie = ide['serie']
-        data_emissao = datetime.strptime(ide['dhEmi'].split('T')[0], '%Y-%m-%d')
+        data_str = ide.get('dhEmi', ide.get('dEmi'))
+        if 'T' in data_str:
+            data_emissao = datetime.strptime(data_str.split('T')[0], '%Y-%m-%d')
+        else:
+            data_emissao = datetime.strptime(data_str, '%Y-%m-%d')
         
         # Informações do Fornecedor (Emitente)
-        emit = nfe['emit']
-        cnpj = emit['CNPJ']
+        emit = inf_nfe['emit']
+        cnpj = emit.get('CNPJ', emit.get('CPF', ''))
         razao_social = emit['xNome']
         inscricao_estadual = emit.get('IE')
         
@@ -182,12 +227,15 @@ def processar_xml_nfe(xml_content):
         estado = None
         if 'enderEmit' in emit:
             end = emit['enderEmit']
-            endereco = f"{end.get('xLgr', '')}, {end.get('nro', '')} - {end.get('xBairro', '')}"
+            logradouro = end.get('xLgr', '')
+            numero_end = end.get('nro', '')
+            bairro = end.get('xBairro', '')
+            endereco = f"{logradouro}, {numero_end} - {bairro}"
             cidade = end.get('xMun')
             estado = end.get('UF')
         
         # Valores Totais
-        total = nfe['total']['ICMSTot']
+        total = inf_nfe['total']['ICMSTot']
         valor_produtos = float(total['vProd'])
         valor_total = float(total['vNF'])
         valor_frete = float(total.get('vFrete', 0))
@@ -197,9 +245,9 @@ def processar_xml_nfe(xml_content):
         
         # Itens da Nota
         itens_list = []
-        det = nfe['det']
+        det = inf_nfe['det']
         
-        # Se tiver apenas um item, colocá-lo numa lista
+        # Se tiver apenas um item, xmltodict retorna dict, não lista
         if isinstance(det, dict):
             det = [det]
         
@@ -208,24 +256,26 @@ def processar_xml_nfe(xml_content):
             prod = item['prod']
             
             # Extrair informações fiscais (ICMS, IPI)
-            icms_valor = None
-            icms_aliquota = None
-            ipi_valor = None
-            ipi_aliquota = None
+            icms_valor = 0.0
+            icms_aliquota = 0.0
+            ipi_valor = 0.0
+            ipi_aliquota = 0.0
             
             if 'imposto' in item:
-                if 'ICMS' in item['imposto']:
-                    for _, icms_data in item['imposto']['ICMS'].items():
-                        if isinstance(icms_data, dict):
-                            icms_valor = float(icms_data.get('vICMS', 0))
-                            icms_aliquota = float(icms_data.get('pICMS', 0))
+                imposto = item['imposto']
+                if 'ICMS' in imposto:
+                    # ICMS pode estar em várias tags (ICMS00, ICMS20, etc.)
+                    for key, val in imposto['ICMS'].items():
+                        if key.startswith('ICMS') and isinstance(val, dict):
+                            icms_valor = float(val.get('vICMS', 0))
+                            icms_aliquota = float(val.get('pICMS', 0))
                             break
                 
-                if 'IPI' in item['imposto']:
-                    for _, ipi_data in item['imposto']['IPI'].items():
-                        if isinstance(ipi_data, dict):
-                            ipi_valor = float(ipi_data.get('vIPI', 0))
-                            ipi_aliquota = float(ipi_data.get('pIPI', 0))
+                if 'IPI' in imposto:
+                     for key, val in imposto['IPI'].items():
+                        if key.startswith('IPITrib') and isinstance(val, dict):
+                            ipi_valor = float(val.get('vIPI', 0))
+                            ipi_aliquota = float(val.get('pIPI', 0))
                             break
             
             item_dict = {
@@ -278,6 +328,8 @@ def processar_xml_nfe(xml_content):
         return nfe_model
         
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise ValueError(f"Erro ao processar XML: {str(e)}")
 
 def importar_nfe(nfe_data, xml_content):
@@ -327,7 +379,7 @@ def importar_nfe(nfe_data, xml_content):
             produto = Produto(
                 codigo=item_data.codigo,
                 nome=item_data.descricao,
-                unidade_medida=item_data.unidade,
+                unidade=item_data.unidade,
                 preco_unitario=item_data.valor_unitario,
                 fornecedor_id=fornecedor.id
             )

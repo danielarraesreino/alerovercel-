@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Aplicar Rateio de Custos aos Pratos</h2>
+<p>Esta ação irá calcular o total de custos do mês selecionado e dividir pela "Venda Estimada", adicionando o resultado
+    ao custo indireto de cada prato ativo.</p>
+
+<div class="alert alert-warning">
+    <strong>Atenção:</strong> Isso atualizará o campo "Custo Indireto" de todos os pratos.
+</div>
+
+<form method="post">
+    <div class="form-row">
+        <div class="col">
+            <label>Mês</label>
+            <input type="number" name="mes" class="form-control" value="{{ hoje.month }}" required>
+        </div>
+        <div class="col">
+            <label>Ano</label>
+            <input type="number" name="ano" class="form-control" value="{{ hoje.year }}" required>
+        </div>
+    </div>
+    <div class="form-group mt-3">
+        <label>Vendas Estimadas (Qtd Pratos/Mês)</label>
+        <input type="number" name="vendas_estimadas" class="form-control" placeholder="Ex: 1500" required>
+        <small>Total de pratos vendidos estimados para o período.</small>
+    </div>
+    <button type="submit" class="btn btn-success">Calcular e Aplicar</button>
+</form>
+{% endblock %}

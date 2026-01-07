@@ -181,7 +181,7 @@ def exportar_relatorio():
             'Cu00f3digo': p.codigo,
             'Nome': p.nome,
             'Categoria': p.categoria,
-            'Unidade': p.unidade_medida,
+            'Unidade': p.unidade,
             'Estoque Atual': p.estoque_atual,
             'Estoque Mu00ednimo': p.estoque_minimo,
             'Preu00e7o Unitu00e1rio': float(p.preco_unitario),

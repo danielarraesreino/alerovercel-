@@ -49,6 +49,7 @@ def create_app(config_name='default'):
     from app.routes.desperdicio import bp as desperdicio_bp
     from app.routes.previsao import bp as previsao_bp
     from app.routes.dashboard import bp as dashboard_bp
+    from app.routes.custos import bp as custos_bp
     
     app.register_blueprint(estoque_bp, url_prefix='/estoque')
     app.register_blueprint(fornecedores_bp, url_prefix='/fornecedores')
@@ -58,6 +59,7 @@ def create_app(config_name='default'):
     app.register_blueprint(cardapios_bp, url_prefix='/cardapios')
     app.register_blueprint(desperdicio_bp, url_prefix='/desperdicio')
     app.register_blueprint(previsao_bp, url_prefix='/previsao')
+    app.register_blueprint(custos_bp, url_prefix='/custos')
     app.register_blueprint(dashboard_bp, url_prefix='/')
     
     # Registra o blueprint de erro (opcional)

@@ -68,6 +68,10 @@
                         <a class="nav-link {% if request.endpoint == 'desperdicio.index' %}active{% endif %}"
                             href="{{ url_for('desperdicio.index') }}">Desperdício</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'custos' in request.endpoint %}active{% endif %}"
+                            href="{{ url_for('custos.index') }}">Custos</a>
+                    </li>
                 </ul>
             </div>
         </div>
