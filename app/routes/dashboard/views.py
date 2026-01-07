@@ -254,9 +254,20 @@ def obter_tendencia_lucratividade(meses=6):
     custo_prato_map = {p.id: float(p.custo_total_por_porcao or 0) for p in todos_pratos}
     
     # 2. Consultar vendas agregadas por Mês e por Item/Prato
+    # Detectar dialeto para função de data correta
+    try:
+        is_postgres = 'postgresql' in db.session.bind.dialect.name
+    except:
+        is_postgres = False # Fallback
+
+    if is_postgres:
+        func_mes_ano = func.to_char(HistoricoVendas.data, 'YYYY-MM')
+    else:
+        func_mes_ano = func.strftime('%Y-%m', HistoricoVendas.data)
+
     # Agrupamos por mês E por item para podermos aplicar o custo correto em Python
     vendas_detalhadas = db.session.query(
-        func.strftime('%Y-%m', HistoricoVendas.data).label('mes_ano'),
+        func_mes_ano.label('mes_ano'),
         HistoricoVendas.cardapio_item_id,
         HistoricoVendas.prato_id,
         CardapioItem.prato_id.label('item_prato_id'),
@@ -267,7 +278,7 @@ def obter_tendencia_lucratividade(meses=6):
     ).filter(
         HistoricoVendas.data >= inicio_periodo
     ).group_by(
-        func.strftime('%Y-%m', HistoricoVendas.data),
+        func_mes_ano,
         HistoricoVendas.cardapio_item_id,
         HistoricoVendas.prato_id,
         CardapioItem.prato_id
@@ -297,13 +308,18 @@ def obter_tendencia_lucratividade(meses=6):
             dados_mensais[mes_ano]['custo'] += custo_total
 
     # 4. Adicionar Custos Indiretos Mensais
+    if is_postgres:
+        func_mes_ano_custo = func.to_char(CustoIndireto.data_referencia, 'YYYY-MM')
+    else:
+        func_mes_ano_custo = func.strftime('%Y-%m', CustoIndireto.data_referencia)
+
     custos_indiretos = db.session.query(
-        func.strftime('%Y-%m', CustoIndireto.data_referencia).label('mes_ano'),
+        func_mes_ano_custo.label('mes_ano'),
         func.sum(CustoIndireto.valor).label('total')
     ).filter(
         CustoIndireto.data_referencia >= inicio_periodo
     ).group_by(
-        func.strftime('%Y-%m', CustoIndireto.data_referencia)
+        func_mes_ano_custo
     ).all()
     
     for c in custos_indiretos:
