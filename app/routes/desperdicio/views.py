@@ -429,182 +429,192 @@ def visualizar_meta(id):
 @bp.route('/relatorios')
 def relatorios():
     """Página de relatórios de desperdício"""
-    # Obter parâmetros para filtros
-    periodo = request.args.get('periodo', 'mensal')
-    ano = request.args.get('ano', date.today().year, type=int)
-    mes = request.args.get('mes', date.today().month, type=int)
-    categoria_id = request.args.get('categoria_id', type=int)
-    
-    # Definir período base
-    hoje = date.today()
-    data_inicio = None
-    data_fim = None
-    
-    if periodo == 'mensal':
-        data_inicio = date(ano, mes, 1)
-        if mes == 12:
-            data_fim = date(ano + 1, 1, 1) - timedelta(days=1)
-        else:
-            data_fim = date(ano, mes + 1, 1) - timedelta(days=1)
-        titulo_periodo = data_inicio.strftime('%B de %Y')
-    elif periodo == 'trimestral':
-        trimestre = (mes - 1) // 3 + 1
-        mes_inicio = (trimestre - 1) * 3 + 1
-        data_inicio = date(ano, mes_inicio, 1)
-        if mes_inicio + 3 > 12:
-            data_fim = date(ano + 1, mes_inicio + 3 - 12, 1) - timedelta(days=1)
-        else:
-            data_fim = date(ano, mes_inicio + 3, 1) - timedelta(days=1)
-        titulo_periodo = f'{trimestre}º Trimestre de {ano}'
-    else:  # anual
-        data_inicio = date(ano, 1, 1)
-        data_fim = date(ano, 12, 31)
-        titulo_periodo = str(ano)
-    
-    # Query base filtrada por data
-    query = RegistroDesperdicio.query.filter(
-        RegistroDesperdicio.data_registro >= data_inicio,
-        RegistroDesperdicio.data_registro <= data_fim
-    )
-    
-    if categoria_id:
-        query = query.filter_by(categoria_id=categoria_id)
-        cat_obj = CategoriaDesperdicio.query.get(categoria_id)
-        if cat_obj:
-            titulo_periodo += f' - Categoria: {cat_obj.nome}'
-    
-    registros = query.all()
-    
-    # Calcular totais
-    total_registros = len(registros)
-    total_valor = sum(float(r.valor_estimado or 0) for r in registros)
-    total_quantidade = sum(float(r.quantidade or 0) for r in registros)
-    
-    # Cálculos para gráficos e tabelas
-    # 1. Por Categoria (Pizza)
-    cat_stats = {}
-    for r in registros:
-        if not r.categoria: continue
-        nome = r.categoria.nome
-        if nome not in cat_stats:
-            cat_stats[nome] = {'valor': 0, 'qtd': 0, 'cor': r.categoria.cor or '#CCCCCC', 'nome': nome}
-        cat_stats[nome]['valor'] += float(r.valor_estimado or 0)
-        cat_stats[nome]['qtd'] += 1
-    
-    estatisticas_categorias = []
-    for nome, dados in cat_stats.items():
-        dados['percentual'] = (dados['valor'] / total_valor * 100) if total_valor > 0 else 0
-        dados['tendencia'] = 0 # Placeholder
-        estatisticas_categorias.append(dados)
-    estatisticas_categorias.sort(key=lambda x: x['valor'], reverse=True)
-    
-    dados_categorias = {
-        'labels': [c['nome'] for c in estatisticas_categorias],
-        'valores': [c['valor'] for c in estatisticas_categorias],
-        'cores': [c['cor'] for c in estatisticas_categorias]
-    }
-
-    # 2. Evolução (Linha) - Agrupar por dia
-    dates_map = {}
-    current = data_inicio
-    while current <= data_fim:
-        dates_map[current.strftime('%Y-%m-%d')] = 0
-        current += timedelta(days=1)
+    try:
+        # Obter parâmetros para filtros
+        periodo = request.args.get('periodo', 'mensal')
+        ano = request.args.get('ano', date.today().year, type=int)
+        mes = request.args.get('mes', date.today().month, type=int)
+        categoria_id = request.args.get('categoria_id', type=int)
         
-    for r in registros:
-        dkey = r.data_registro.strftime('%Y-%m-%d')
-        if dkey in dates_map:
-            dates_map[dkey] += float(r.valor_estimado or 0)
+        # Definir período base
+        hoje = date.today()
+        data_inicio = None
+        data_fim = None
+        
+        if periodo == 'mensal':
+            data_inicio = date(ano, mes, 1)
+            if mes == 12:
+                data_fim = date(ano + 1, 1, 1) - timedelta(days=1)
+            else:
+                data_fim = date(ano, mes + 1, 1) - timedelta(days=1)
+            titulo_periodo = data_inicio.strftime('%B de %Y')
+        elif periodo == 'trimestral':
+            trimestre = (mes - 1) // 3 + 1
+            mes_inicio = (trimestre - 1) * 3 + 1
+            data_inicio = date(ano, mes_inicio, 1)
+            if mes_inicio + 3 > 12:
+                data_fim = date(ano + 1, mes_inicio + 3 - 12, 1) - timedelta(days=1)
+            else:
+                data_fim = date(ano, mes_inicio + 3, 1) - timedelta(days=1)
+            titulo_periodo = f'{trimestre}º Trimestre de {ano}'
+        else:  # anual
+            data_inicio = date(ano, 1, 1)
+            data_fim = date(ano, 12, 31)
+            titulo_periodo = str(ano)
+        
+        # Query base filtrada por data com Eager Loading
+        from sqlalchemy.orm import joinedload
+        query = RegistroDesperdicio.query.options(
+            joinedload(RegistroDesperdicio.categoria),
+            joinedload(RegistroDesperdicio.produto),
+            joinedload(RegistroDesperdicio.prato)
+        ).filter(
+            RegistroDesperdicio.data_registro >= data_inicio,
+            RegistroDesperdicio.data_registro <= data_fim
+        )
+        
+        if categoria_id:
+            query = query.filter_by(categoria_id=categoria_id)
+            cat_obj = CategoriaDesperdicio.query.get(categoria_id)
+            if cat_obj:
+                titulo_periodo += f' - Categoria: {cat_obj.nome}'
+        
+        registros = query.all()
+        
+        # Calcular totais
+        total_registros = len(registros)
+        total_valor = sum(float(r.valor_estimado or 0) for r in registros)
+        total_quantidade = sum(float(r.quantidade or 0) for r in registros)
+        
+        # Cálculos para gráficos e tabelas
+        # 1. Por Categoria (Pizza)
+        cat_stats = {}
+        for r in registros:
+            if not r.categoria: continue
+            nome = r.categoria.nome
+            if nome not in cat_stats:
+                cat_stats[nome] = {'valor': 0, 'qtd': 0, 'cor': r.categoria.cor or '#CCCCCC', 'nome': nome}
+            cat_stats[nome]['valor'] += float(r.valor_estimado or 0)
+            cat_stats[nome]['qtd'] += 1
+        
+        estatisticas_categorias = []
+        for nome, dados in cat_stats.items():
+            dados['percentual'] = (dados['valor'] / total_valor * 100) if total_valor > 0 else 0
+            dados['tendencia'] = 0 # Placeholder
+            estatisticas_categorias.append(dados)
+        estatisticas_categorias.sort(key=lambda x: x['valor'], reverse=True)
+        
+        dados_categorias = {
+            'labels': [c['nome'] for c in estatisticas_categorias],
+            'valores': [c['valor'] for c in estatisticas_categorias],
+            'cores': [c['cor'] for c in estatisticas_categorias]
+        }
+    
+        # 2. Evolução (Linha) - Agrupar por dia
+        dates_map = {}
+        current = data_inicio
+        while current <= data_fim:
+            dates_map[current.strftime('%Y-%m-%d')] = 0
+            current += timedelta(days=1)
             
-    sorted_dates = sorted(dates_map.keys())
-    dados_evolucao = {
-        'datas': [datetime.strptime(d, '%Y-%m-%d').strftime('%d/%m') for d in sorted_dates],
-        'valores': [dates_map[d] for d in sorted_dates]
-    }
-    
-    # 3. Dias da Semana (Barra)
-    dias_semana_map = {0: 'Dom', 1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex', 6: 'Sáb'}
-    # Nota: Python weekday() 0=Monday. JS 0=Sunday usually? 
-    # Validar: Python 0=Segunda, 6=Domingo. Ajustar map.
-    dias_semana_lbl = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
-    dias_valores = [0] * 7
-    
-    for r in registros:
-        wd = r.data_registro.weekday() # 0-6
-        dias_valores[wd] += float(r.valor_estimado or 0)
+        for r in registros:
+            dkey = r.data_registro.strftime('%Y-%m-%d')
+            if dkey in dates_map:
+                dates_map[dkey] += float(r.valor_estimado or 0)
+                
+        sorted_dates = sorted(dates_map.keys())
+        dados_evolucao = {
+            'datas': [datetime.strptime(d, '%Y-%m-%d').strftime('%d/%m') for d in sorted_dates],
+            'valores': [dates_map[d] for d in sorted_dates]
+        }
         
-    dados_dias_semana = {
-        'labels': dias_semana_lbl,
-        'valores': dias_valores
-    }
-
-    # 4. Top Itens
-    itens_stats = {}
-    for r in registros:
-        key = None
-        nome = "Desconhecido"
-        unidade = r.unidade_medida
-        if r.produto: 
-            key = f"prod_{r.produto_id}"
-            nome = r.produto.nome
-        elif r.prato:
-            key = f"prato_{r.prato_id}"
-            nome = r.prato.nome
-        else:
-            continue
+        # 3. Dias da Semana (Barra)
+        dias_semana_map = {0: 'Dom', 1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex', 6: 'Sáb'}
+        # Nota: Python weekday() 0=Monday. JS 0=Sunday usually? 
+        # Validar: Python 0=Segunda, 6=Domingo. Ajustar map.
+        dias_semana_lbl = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+        dias_valores = [0] * 7
+        
+        for r in registros:
+            wd = r.data_registro.weekday() # 0-6
+            dias_valores[wd] += float(r.valor_estimado or 0)
             
-        if key not in itens_stats:
-            itens_stats[key] = {'nome': nome, 'valor': 0, 'quantidade': 0, 'unidade': unidade}
-        
-        itens_stats[key]['valor'] += float(r.valor_estimado or 0)
-        itens_stats[key]['quantidade'] += float(r.quantidade or 0)
-
-    top_itens = list(itens_stats.values())
-    top_itens.sort(key=lambda x: x['valor'], reverse=True)
-    top_itens = top_itens[:10]
-    for item in top_itens:
-        item['percentual'] = (item['valor'] / total_valor * 100) if total_valor > 0 else 0
-        # Template espera item.prato.nome? Não, vamos passar dict
-        # Hack para template: ele acessa item.prato.nome. Vamos simular estrutura se precisar
-        # O template usa {{ item.prato.nome }} ??
-        # Vamos checar o template na próxima verificação se falhar, mas vou criar um objeto fake wrapper se precisar.
-        # Template line 219: {{ item.prato.nome }}. ISSO É UM PROBLEMA.
-        # Vou passar um objeto Mock ou dict com acesso via ponto se precisar, 
-        # mas Jinja acessa dict via ponto também? Sim.
-        # Então item.prato.nome precisa funcionar.
-        # Vou criar item['prato'] = {'nome': nome} dentro do dict.
-        item['prato'] = {'nome': item['nome']}
-        
-    # Calcular tendência (placeholder ou simples comparação com período anterior)
-    tendencia = 0
-    media_diaria = 0
-    if total_registros > 0:
-        dias = (data_fim - data_inicio).days + 1
-        media_diaria = total_valor / dias
-
-    return render_template('desperdicio/relatorios.html',
-                          registros=registros,
-                          total_registros=total_registros,
-                          total_valor=total_valor,
-                          total_quantidade=total_quantidade,
-                          media_diaria=media_diaria,
-                          tendencia=tendencia,
-                          # Dados complexos
-                          estatisticas_categorias=estatisticas_categorias,
-                          top_itens=top_itens,
-                          # JSONs para gráficos
-                          dados_evolucao=dados_evolucao,
-                          dados_categorias=dados_categorias,
-                          dados_dias_semana=dados_dias_semana,
-                          # Outros
-                          titulo_periodo=titulo_periodo,
-                          periodo=periodo,
-                          ano=ano,
-                          mes=mes,
-                          categoria_id=categoria_id,
-                          todas_categorias=CategoriaDesperdicio.query.all(),
-                          data_inicio=data_inicio.strftime('%d/%m/%Y'),
-                          data_fim=data_fim.strftime('%d/%m/%Y'))
+        dados_dias_semana = {
+            'labels': dias_semana_lbl,
+            'valores': dias_valores
+        }
+    
+        # 4. Top Itens
+        itens_stats = {}
+        for r in registros:
+            key = None
+            nome = "Desconhecido"
+            unidade = r.unidade_medida
+            if r.produto: 
+                key = f"prod_{r.produto_id}"
+                nome = r.produto.nome
+            elif r.prato:
+                key = f"prato_{r.prato_id}"
+                nome = r.prato.nome
+            else:
+                continue
+                
+            if key not in itens_stats:
+                itens_stats[key] = {'nome': nome, 'valor': 0, 'quantidade': 0, 'unidade': unidade}
+            
+            itens_stats[key]['valor'] += float(r.valor_estimado or 0)
+            itens_stats[key]['quantidade'] += float(r.quantidade or 0)
+    
+        top_itens = list(itens_stats.values())
+        top_itens.sort(key=lambda x: x['valor'], reverse=True)
+        top_itens = top_itens[:10]
+        for item in top_itens:
+            item['percentual'] = (item['valor'] / total_valor * 100) if total_valor > 0 else 0
+            # Template espera item.prato.nome? Não, vamos passar dict
+            # Hack para template: ele acessa item.prato.nome. Vamos simular estrutura se precisar
+            # O template usa {{ item.prato.nome }} ??
+            # Vamos checar o template na próxima verificação se falhar, mas vou criar um objeto fake wrapper se precisar.
+            # Template line 219: {{ item.prato.nome }}. ISSO É UM PROBLEMA.
+            # Vou passar um objeto Mock ou dict com acesso via ponto se precisar, 
+            # mas Jinja acessa dict via ponto também? Sim.
+            # Então item.prato.nome precisa funcionar.
+            # Vou criar item['prato'] = {'nome': nome} dentro do dict.
+            item['prato'] = {'nome': item['nome']}
+            
+        # Calcular tendência (placeholder ou simples comparação com período anterior)
+        tendencia = 0
+        media_diaria = 0
+        if total_registros > 0:
+            dias = (data_fim - data_inicio).days + 1
+            media_diaria = total_valor / dias
+    
+        return render_template('desperdicio/relatorios.html',
+                            registros=registros,
+                            total_registros=total_registros,
+                            total_valor=total_valor,
+                            total_quantidade=total_quantidade,
+                            media_diaria=media_diaria,
+                            tendencia=tendencia,
+                            # Dados complexos
+                            estatisticas_categorias=estatisticas_categorias,
+                            top_itens=top_itens,
+                            # JSONs para gráficos
+                            dados_evolucao=dados_evolucao,
+                            dados_categorias=dados_categorias,
+                            dados_dias_semana=dados_dias_semana,
+                            # Outros
+                            titulo_periodo=titulo_periodo,
+                            periodo=periodo,
+                            ano=ano,
+                            mes=mes,
+                            categoria_id=categoria_id,
+                            todas_categorias=CategoriaDesperdicio.query.all(),
+                            data_inicio=data_inicio.strftime('%d/%m/%Y'),
+                            data_fim=data_fim.strftime('%d/%m/%Y'))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return f"Erro ao gerar relatórios: {str(e)} <br><pre>{traceback.format_exc()}</pre>", 500
 
 
 @bp.route('/exportar/registros')

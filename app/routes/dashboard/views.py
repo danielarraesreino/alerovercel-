@@ -17,9 +17,14 @@ import io
 
 # Funções auxiliares para cálculos de lucratividade
 def calcular_metricas_principais(data_inicio, data_fim):
-    """Calcula as métricas principais de lucratividade para o período"""
-    # Obter vendas no período
-    vendas = HistoricoVendas.query.filter(
+    """Calcula as métricas principais de lucratividade para o período - OTIMIZADO"""
+    from sqlalchemy.orm import joinedload
+    
+    # Obter vendas no período com eager loading
+    vendas = HistoricoVendas.query.options(
+        joinedload(HistoricoVendas.cardapio_item).joinedload(CardapioItem.prato),
+        joinedload(HistoricoVendas.prato)
+    ).filter(
         HistoricoVendas.data >= data_inicio,
         HistoricoVendas.data <= data_fim
     ).all()
@@ -31,16 +36,17 @@ def calcular_metricas_principais(data_inicio, data_fim):
     custo_total = 0
     for venda in vendas:
         # Custo do item vendido
-        if venda.cardapio_item_id:
-            item = CardapioItem.query.get(venda.cardapio_item_id)
-            if item and item.prato:
+        if venda.cardapio_item:
+            # Já carregado via eager load
+            item = venda.cardapio_item
+            if item.prato:
                 custo_total += float(item.prato.custo_total_por_porcao or 0) * venda.quantidade
-        elif venda.prato_id:
-            prato = Prato.query.get(venda.prato_id)
-            if prato:
-                custo_total += float(prato.custo_total_por_porcao or 0) * venda.quantidade
+        elif venda.prato:
+            # Já carregado via eager load
+            prato = venda.prato
+            custo_total += float(prato.custo_total_por_porcao or 0) * venda.quantidade
     
-    # Adicionar custos indiretos do período
+    # Adicionar custos indiretos do período (Query única, ok)
     custos_indiretos = CustoIndireto.query.filter(
         CustoIndireto.data_referencia >= data_inicio,
         CustoIndireto.data_referencia <= data_fim
@@ -56,7 +62,9 @@ def calcular_metricas_principais(data_inicio, data_fim):
 
 
 def obter_dados_diarios(data_inicio, data_fim):
-    """Obtém dados diários de receitas e custos para gráfico"""
+    """Obtém dados diários de receitas e custos para gráfico - OTIMIZADO"""
+    from sqlalchemy.orm import joinedload
+
     # Criar dicionários para armazenar os valores por dia
     receitas_por_dia = {}
     custos_por_dia = {}
@@ -71,8 +79,11 @@ def obter_dados_diarios(data_inicio, data_fim):
         lucros_por_dia[data_str] = 0
         data_atual += timedelta(days=1)
     
-    # Obter vendas no período
-    vendas = HistoricoVendas.query.filter(
+    # Obter vendas no período com eager loading
+    vendas = HistoricoVendas.query.options(
+        joinedload(HistoricoVendas.cardapio_item).joinedload(CardapioItem.prato),
+        joinedload(HistoricoVendas.prato)
+    ).filter(
         HistoricoVendas.data >= data_inicio,
         HistoricoVendas.data <= data_fim
     ).all()
@@ -80,20 +91,21 @@ def obter_dados_diarios(data_inicio, data_fim):
     # Calcular receitas e custos diretos por dia
     for venda in vendas:
         data_str = venda.data.strftime('%Y-%m-%d')
-        
+        if data_str not in receitas_por_dia:
+            continue # Data fora do range (improvável dado o filter)
+            
         # Adicionar receita
         receitas_por_dia[data_str] += float(venda.valor_total or 0)
         
         # Calcular custo direto
         custo_item = 0
-        if venda.cardapio_item_id:
-            item = CardapioItem.query.get(venda.cardapio_item_id)
-            if item and item.prato:
+        if venda.cardapio_item:
+            item = venda.cardapio_item
+            if item.prato:
                 custo_item = float(item.prato.custo_total_por_porcao or 0) * venda.quantidade
-        elif venda.prato_id:
-            prato = Prato.query.get(venda.prato_id)
-            if prato:
-                custo_item = float(prato.custo_total_por_porcao or 0) * venda.quantidade
+        elif venda.prato:
+            prato = venda.prato
+            custo_item = float(prato.custo_total_por_porcao or 0) * venda.quantidade
         
         custos_por_dia[data_str] += custo_item
     
@@ -370,62 +382,67 @@ def obter_indicadores_desperdicio(data_inicio, data_fim):
 @bp.route('/index')
 def index():
     """Página principal do dashboard de lucratividade"""
-    # Obter período selecionado
-    periodo = request.args.get('periodo', 'mensal')
-    hoje = date.today()
-    
-    if periodo == 'mensal':
-        inicio_periodo = date(hoje.year, hoje.month, 1)
-        fim_periodo = date(hoje.year, hoje.month, calendar.monthrange(hoje.year, hoje.month)[1])
-        titulo_periodo = f"Mês de {inicio_periodo.strftime('%B/%Y')}"
-    elif periodo == 'trimestral':
-        trimestre = (hoje.month - 1) // 3
-        inicio_periodo = date(hoje.year, trimestre * 3 + 1, 1)
-        fim_periodo = date(hoje.year, (trimestre + 1) * 3, calendar.monthrange(hoje.year, (trimestre + 1) * 3)[1])
-        titulo_periodo = f"{trimestre + 1}º Trimestre de {hoje.year}"
-    elif periodo == 'anual':
-        inicio_periodo = date(hoje.year, 1, 1)
-        fim_periodo = date(hoje.year, 12, 31)
-        titulo_periodo = f"Ano de {hoje.year}"
-    else:  # personalizado
-        inicio_periodo = request.args.get('data_inicio', date(hoje.year, hoje.month, 1))
-        fim_periodo = request.args.get('data_fim', date(hoje.year, hoje.month, calendar.monthrange(hoje.year, hoje.month)[1]))
-        titulo_periodo = f"Período de {inicio_periodo} a {fim_periodo}"
-    
-    # Calcular métricas principais
-    receita_total, custo_total, lucro_total, margem_media = calcular_metricas_principais(inicio_periodo, fim_periodo)
-    
-    # Obter dados para gráficos
-    dados_diarios = obter_dados_diarios(inicio_periodo, fim_periodo)
-    top_pratos = obter_top_pratos(inicio_periodo, fim_periodo)
-    distribuicao_categorias = obter_distribuicao_categorias(inicio_periodo, fim_periodo)
-    tendencia_lucratividade = obter_tendencia_lucratividade()
-    
-    # Calcular valor do desperdício
-    desperdicios = RegistroDesperdicio.query.filter(
-        RegistroDesperdicio.data_registro >= inicio_periodo,
-        RegistroDesperdicio.data_registro <= fim_periodo
-    ).all()
-    valor_desperdicio = sum(float(d.valor_estimado or 0) for d in desperdicios)
-    
-    # Calcular impacto do desperdício em relação ao custo total
-    impacto_desperdicio = (valor_desperdicio / custo_total * 100) if custo_total > 0 else 0
-    
-    return render_template('dashboard/index.html',
-                         titulo_periodo=titulo_periodo,
-                         periodo=periodo,
-                         inicio_periodo=inicio_periodo,
-                         fim_periodo=fim_periodo,
-                         receita_total=receita_total,
-                         custo_total=custo_total,
-                         lucro_total=lucro_total,
-                         margem_media=margem_media,
-                         dados_diarios=dados_diarios,
-                         top_pratos=top_pratos,
-                         distribuicao_categorias=distribuicao_categorias,
-                         tendencia_lucratividade=tendencia_lucratividade,
-                         valor_desperdicio=valor_desperdicio,
-                         impacto_desperdicio=impacto_desperdicio)
+    try:
+        # Obter período selecionado
+        periodo = request.args.get('periodo', 'mensal')
+        hoje = date.today()
+        
+        if periodo == 'mensal':
+            inicio_periodo = date(hoje.year, hoje.month, 1)
+            fim_periodo = date(hoje.year, hoje.month, calendar.monthrange(hoje.year, hoje.month)[1])
+            titulo_periodo = f"Mês de {inicio_periodo.strftime('%B/%Y')}"
+        elif periodo == 'trimestral':
+            trimestre = (hoje.month - 1) // 3
+            inicio_periodo = date(hoje.year, trimestre * 3 + 1, 1)
+            fim_periodo = date(hoje.year, (trimestre + 1) * 3, calendar.monthrange(hoje.year, (trimestre + 1) * 3)[1])
+            titulo_periodo = f"{trimestre + 1}º Trimestre de {hoje.year}"
+        elif periodo == 'anual':
+            inicio_periodo = date(hoje.year, 1, 1)
+            fim_periodo = date(hoje.year, 12, 31)
+            titulo_periodo = f"Ano de {hoje.year}"
+        else:  # personalizado
+            inicio_periodo = request.args.get('data_inicio', date(hoje.year, hoje.month, 1))
+            fim_periodo = request.args.get('data_fim', date(hoje.year, hoje.month, calendar.monthrange(hoje.year, hoje.month)[1]))
+            titulo_periodo = f"Período de {inicio_periodo} a {fim_periodo}"
+        
+        # Calcular métricas principais
+        receita_total, custo_total, lucro_total, margem_media = calcular_metricas_principais(inicio_periodo, fim_periodo)
+        
+        # Obter dados para gráficos
+        dados_diarios = obter_dados_diarios(inicio_periodo, fim_periodo)
+        top_pratos = obter_top_pratos(inicio_periodo, fim_periodo)
+        distribuicao_categorias = obter_distribuicao_categorias(inicio_periodo, fim_periodo)
+        tendencia_lucratividade = obter_tendencia_lucratividade()
+        
+        # Calcular valor do desperdício
+        desperdicios = RegistroDesperdicio.query.filter(
+            RegistroDesperdicio.data_registro >= inicio_periodo,
+            RegistroDesperdicio.data_registro <= fim_periodo
+        ).all()
+        valor_desperdicio = sum(float(d.valor_estimado or 0) for d in desperdicios)
+        
+        # Calcular impacto do desperdício em relação ao custo total
+        impacto_desperdicio = (valor_desperdicio / custo_total * 100) if custo_total > 0 else 0
+        
+        return render_template('dashboard/index.html',
+                            titulo_periodo=titulo_periodo,
+                            periodo=periodo,
+                            inicio_periodo=inicio_periodo,
+                            fim_periodo=fim_periodo,
+                            receita_total=receita_total,
+                            custo_total=custo_total,
+                            lucro_total=lucro_total,
+                            margem_media=margem_media,
+                            dados_diarios=dados_diarios,
+                            top_pratos=top_pratos,
+                            distribuicao_categorias=distribuicao_categorias,
+                            tendencia_lucratividade=tendencia_lucratividade,
+                            valor_desperdicio=valor_desperdicio,
+                            impacto_desperdicio=impacto_desperdicio)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return f"Erro processando Dashboard: {str(e)} <br><pre>{traceback.format_exc()}</pre>", 500
 
 
 @bp.route('/relatorio/pratos')
