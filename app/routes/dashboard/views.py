@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, request, jsonify, current_app, Response
 from app.extensions import db
-from sqlalchemy import func, desc, extract, and_, or_, case
+from sqlalchemy import func, desc, extract, and_, or_, case, cast, Float
 from app.models.modelo_prato import Prato, PratoInsumo
 from app.models.modelo_produto import Produto
 from app.models.modelo_cardapio import Cardapio, CardapioItem, CardapioSecao
@@ -250,7 +250,7 @@ def obter_tendencia_lucratividade(meses=6):
         func.strftime('%Y-%m', HistoricoVendas.data).label('mes_ano'),
         func.sum(HistoricoVendas.valor_total).label('receita'),
         func.sum(case([(CardapioItem.id != None, 
-                        expression.cast(Prato.custo_total_por_porcao, Float) * HistoricoVendas.quantidade)], 
+                        cast(Prato.custo_total_por_porcao, Float) * HistoricoVendas.quantidade)], 
                       else_=0)).label('custo_pratos_via_itens'),
          # Nota: Esta query simplificada foca em receita. O cálculo exato de custo histórico requer snapshots.
          # Para performance, vamos usar uma aproximação baseada na receita e custo atual 
