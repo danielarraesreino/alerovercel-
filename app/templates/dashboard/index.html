@@ -10,50 +10,62 @@
         border-radius: 10px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
+
     .card-dashboard:hover {
         transform: translateY(-5px);
     }
+
     .card-profit {
         background-color: #d4edda;
         border-color: #c3e6cb;
     }
+
     .card-revenue {
         background-color: #cce5ff;
         border-color: #b8daff;
     }
+
     .card-cost {
         background-color: #fff3cd;
         border-color: #ffeeba;
     }
+
     .card-margin {
         background-color: #d1ecf1;
         border-color: #bee5eb;
     }
+
     .metric-value {
         font-size: 2rem;
         font-weight: bold;
     }
+
     .metric-title {
         font-size: 1.1rem;
         font-weight: 500;
     }
+
     .chart-container {
         position: relative;
         height: 300px;
         margin-bottom: 20px;
     }
+
     .dashboard-section {
         margin-bottom: 30px;
     }
+
     .dashboard-subtitle {
         border-bottom: 2px solid #f0f0f0;
         padding-bottom: 10px;
         margin-bottom: 20px;
         color: #495057;
     }
+
     .periodo-selector {
         margin-bottom: 20px;
     }
+
     .waste-indicator {
         display: inline-block;
         padding: 5px 10px;
@@ -61,27 +73,33 @@
         margin-right: 10px;
         font-weight: bold;
     }
+
     .waste-high {
         background-color: #f8d7da;
         color: #721c24;
     }
+
     .waste-medium {
         background-color: #fff3cd;
         color: #856404;
     }
+
     .waste-low {
         background-color: #d4edda;
         color: #155724;
     }
+
     .menu-category {
         font-weight: bold;
         margin-top: 15px;
     }
+
     .report-link {
         text-decoration: none;
         color: #007bff;
         font-weight: 500;
     }
+
     .report-link:hover {
         text-decoration: underline;
     }
@@ -98,10 +116,11 @@
         <div class="periodo-selector">
             <form method="get" action="" class="form-inline justify-content-end">
                 <select name="periodo" class="form-control form-control-sm me-2">
-                    <option value="mensal" {% if periodo == 'mensal' %}selected{% endif %}>Mensal</option>
-                    <option value="trimestral" {% if periodo == 'trimestral' %}selected{% endif %}>Trimestral</option>
-                    <option value="anual" {% if periodo == 'anual' %}selected{% endif %}>Anual</option>
-                    <option value="personalizado" {% if periodo == 'personalizado' %}selected{% endif %}>Personalizado</option>
+                    <option value="mensal" {% if periodo=='mensal' %}selected{% endif %}>Mensal</option>
+                    <option value="trimestral" {% if periodo=='trimestral' %}selected{% endif %}>Trimestral</option>
+                    <option value="anual" {% if periodo=='anual' %}selected{% endif %}>Anual</option>
+                    <option value="personalizado" {% if periodo=='personalizado' %}selected{% endif %}>Personalizado
+                    </option>
                 </select>
                 <button type="submit" class="btn btn-sm btn-primary">Filtrar</button>
             </form>
@@ -157,7 +176,8 @@
             <div class="card-body">
                 <h5 class="card-title">Análise por Pratos</h5>
                 <p>Verifique a lucratividade detalhada de cada prato, incluindo custos diretos, indiretos e margens.</p>
-                <a href="{{ url_for('dashboard.relatorio_pratos', data_inicio=inicio_periodo.strftime('%Y-%m-%d'), data_fim=fim_periodo.strftime('%Y-%m-%d')) }}" class="btn btn-primary">Ver Relatório</a>
+                <a href="{{ url_for('dashboard.relatorio_pratos', data_inicio=inicio_periodo.strftime('%Y-%m-%d'), data_fim=fim_periodo.strftime('%Y-%m-%d')) }}"
+                    class="btn btn-primary">Ver Relatório</a>
             </div>
         </div>
     </div>
@@ -166,7 +186,8 @@
             <div class="card-body">
                 <h5 class="card-title">Análise por Categorias</h5>
                 <p>Visualize o desempenho financeiro agrupado por categorias de produtos e seções do cardápio.</p>
-                <a href="{{ url_for('dashboard.relatorio_categorias', data_inicio=inicio_periodo.strftime('%Y-%m-%d'), data_fim=fim_periodo.strftime('%Y-%m-%d')) }}" class="btn btn-primary">Ver Relatório</a>
+                <a href="{{ url_for('dashboard.relatorio_categorias', data_inicio=inicio_periodo.strftime('%Y-%m-%d'), data_fim=fim_periodo.strftime('%Y-%m-%d')) }}"
+                    class="btn btn-primary">Ver Relatório</a>
             </div>
         </div>
     </div>
@@ -211,7 +232,8 @@
                 <div class="row">
                     <div class="col-md-6">
                         <h6>Nível de Desperdício</h6>
-                        <div class="waste-indicator {% if nivel_desperdicio == 'alto' %}waste-high{% elif nivel_desperdicio == 'medio' %}waste-medium{% else %}waste-low{% endif %}">
+                        <div
+                            class="waste-indicator {% if nivel_desperdicio == 'alto' %}waste-high{% elif nivel_desperdicio == 'medio' %}waste-medium{% else %}waste-low{% endif %}">
                             {{ nivel_desperdicio|title }}
                         </div>
                         <p class="mt-2">Valor total do desperdício: R$ {{ "%.2f"|format(valor_desperdicio) }}</p>
@@ -219,7 +241,8 @@
                     <div class="col-md-6">
                         <h6>Impacto na Lucratividade</h6>
                         <p>O desperdício representa {{ "%.1f"|format(impacto_desperdicio) }}% do custo total</p>
-                        <a href="{{ url_for('desperdicio.index') }}" class="btn btn-sm btn-outline-primary">Ver Detalhes</a>
+                        <a href="{{ url_for('desperdicio.index') }}" class="btn btn-sm btn-outline-primary">Ver
+                            Detalhes</a>
                     </div>
                 </div>
             </div>
@@ -242,7 +265,8 @@
                         <ul class="list-unstyled">
                             {% for prato in categoria.pratos %}
                             <li>
-                                <a href="{{ url_for('cardapios.analise_rentabilidade', id=prato.id) }}" class="report-link">
+                                <a href="{{ url_for('cardapios.analise_rentabilidade', id=prato.id) }}"
+                                    class="report-link">
                                     {{ prato.nome }}
                                 </a>
                                 <span class="text-muted">({{ "%.1f"|format(prato.margem) }}%)</span>
@@ -262,18 +286,18 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Dados para os gráficos
-    const dadosReceita = {{ dados_receita|safe }};
-    const dadosCustos = {{ dados_custos|safe }};
-    
+    const dadosDiarios = {{ dados_diarios| tojson }};
+    const dadosCategorias = {{ distribuicao_categorias| tojson }};
+
     // Configurar gráfico de receita
     const ctxReceita = document.getElementById('receitaChart').getContext('2d');
     new Chart(ctxReceita, {
         type: 'line',
         data: {
-            labels: dadosReceita.map(item => item.data),
+            labels: dadosDiarios.datas,
             datasets: [{
                 label: 'Receita',
-                data: dadosReceita.map(item => item.valor),
+                data: dadosDiarios.receitas,
                 borderColor: '#007bff',
                 backgroundColor: 'rgba(0, 123, 255, 0.1)',
                 borderWidth: 2,
@@ -293,7 +317,7 @@
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: function(value) {
+                        callback: function (value) {
                             return 'R$ ' + value.toLocaleString('pt-BR');
                         }
                     }
@@ -301,16 +325,16 @@
             }
         }
     });
-    
+
     // Configurar gráfico de custos
     const ctxCustos = document.getElementById('custosChart').getContext('2d');
     new Chart(ctxCustos, {
         type: 'doughnut',
         data: {
-            labels: dadosCustos.map(item => item.categoria),
+            labels: dadosCategorias.categorias,
             datasets: [{
-                data: dadosCustos.map(item => item.valor),
-                backgroundColor: [
+                data: dadosCategorias.valores,
+                backgroundColor: dadosCategorias.cores || [
                     '#007bff',
                     '#28a745',
                     '#ffc107',
