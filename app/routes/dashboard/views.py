@@ -249,8 +249,8 @@ def obter_tendencia_lucratividade(meses=6):
     resultados = db.session.query(
         func.strftime('%Y-%m', HistoricoVendas.data).label('mes_ano'),
         func.sum(HistoricoVendas.valor_total).label('receita'),
-        func.sum(case([(CardapioItem.id != None, 
-                        cast(Prato.custo_total_por_porcao, Float) * HistoricoVendas.quantidade)], 
+        func.sum(case((CardapioItem.id != None, 
+                        cast(Prato.custo_total_por_porcao, Float) * HistoricoVendas.quantidade), 
                       else_=0)).label('custo_pratos_via_itens'),
          # Nota: Esta query simplificada foca em receita. O cálculo exato de custo histórico requer snapshots.
          # Para performance, vamos usar uma aproximação baseada na receita e custo atual 
