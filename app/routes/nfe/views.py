@@ -159,36 +159,41 @@ def processar_xml_nfe(xml_content):
         # process_namespaces=True remove namespaces dos nomes das tags para facilitar acesso
         xml_dict = xmltodict.parse(xml_content, process_namespaces=True)
         
-        # Encontrar a raiz NFe, lidando com nfeProc (distribuição) ou NFe (apenas nota)
-        nfe_data = None
+        # Função auxiliar para busca recursiva
+        def buscar_chave(dados, chave):
+            if isinstance(dados, dict):
+                for k, v in dados.items():
+                    if k == chave:
+                        return v
+                    if isinstance(v, (dict, list)):
+                        res = buscar_chave(v, chave)
+                        if res: return res
+            elif isinstance(dados, list):
+                for item in dados:
+                    res = buscar_chave(item, chave)
+                    if res: return res
+            return None
+
+        # Tentar encontrar infNFe recursivamente
+        inf_nfe = buscar_chave(xml_dict, 'infNFe')
         
-        # Tentar encontrar NFe dentro de nfeProc
-        if 'nfeProc' in xml_dict:
-            if 'NFe' in xml_dict['nfeProc']:
-                nfe_data = xml_dict['nfeProc']['NFe']
-            else:
-                # Caso estranho onde nfeProc não tem NFe diretameente?
-                pass
-        elif 'NFe' in xml_dict:
-             nfe_data = xml_dict['NFe']
-             
-        if not nfe_data or 'infNFe' not in nfe_data:
-            # Tentar busca profunda ou chaves com namespace se process_namespaces=False
-            # Mas assumindo True, chaves devem estar limpas.
-            # Fallback: iterar chaves raízes
-            for key in xml_dict:
-                if key.lower().endswith('nfeproc'):
-                    if 'NFe' in xml_dict[key]:
-                        nfe_data = xml_dict[key]['NFe']
+        if not inf_nfe:
+             # Tentar encontrar com maiúsculas/minúsculas diferentes ou namespaces residuais
+             # Mas assumindo que xmltodict com process_namespaces=True resolve a maioria
+             # Vamos tentar iterar manualmente o primeiro nível para casos extremos
+             for key in xml_dict:
+                 if 'infNFe' in str(key):
+                     # Se a chave contem infNFe (ex: ns:infNFe)
+                    if isinstance(xml_dict[key], dict):
+                        inf_nfe = xml_dict[key]
                         break
-                elif key.lower() == 'nfe':
-                    nfe_data = xml_dict[key]
-                    break
         
-        if not nfe_data or 'infNFe' not in nfe_data:
+        if not inf_nfe:
+            # Dump parcial para debug no log se falhar
+            print(f"DEBUG XML KEYS: {list(xml_dict.keys())}")
             raise ValueError("Estrutura da NF-e inválida: Tag 'infNFe' não encontrada.")
             
-        inf_nfe = nfe_data['infNFe']
+        # inf_nfe encontrado diretamente
         
         # Extrair chave de acesso
         chave_acesso = None
