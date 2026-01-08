@@ -255,10 +255,15 @@ def obter_tendencia_lucratividade(meses=6):
     
     # 2. Consultar vendas agregadas por Mês e por Item/Prato
     # Detectar dialeto para função de data correta
+    is_postgres = False
     try:
-        is_postgres = 'postgresql' in db.session.bind.dialect.name
+        db_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
+        if db_uri and ('postgres' in db_uri or 'psycopg' in db_uri):
+            is_postgres = True
+        elif db.session.bind and 'postgresql' in db.session.bind.dialect.name:
+            is_postgres = True
     except:
-        is_postgres = False # Fallback
+        is_postgres = False # Fallback para SQLite
 
     if is_postgres:
         func_mes_ano = func.to_char(HistoricoVendas.data, 'YYYY-MM')
