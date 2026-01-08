@@ -156,8 +156,10 @@ def processar_xml_nfe(xml_content):
     """Processa o XML da NF-e e retorna um modelo validado"""
     try:
         # Converter XML para dicionário
-        # process_namespaces=True remove namespaces dos nomes das tags para facilitar acesso
-        xml_dict = xmltodict.parse(xml_content, process_namespaces=True)
+        # process_namespaces=True remove namespaces dos nomes das tags para facilitar acesso,
+        # MAS apenas se fornecermos o mapa de namespaces para remover (None)
+        ns_map = {'http://www.portalfiscal.inf.br/nfe': None}
+        xml_dict = xmltodict.parse(xml_content, process_namespaces=True, namespaces=ns_map)
         
         # Função auxiliar para busca recursiva
         def buscar_chave(dados, chave):
